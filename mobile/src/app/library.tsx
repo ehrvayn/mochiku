@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DeleteItemModal from "../components/modal/DeleteItemModal";
 import DraftStrip from "../components/DraftStrip";
 import Mochiku from "../components/Mochiku";
-import PhotoCard from "../components/PhotoCard";
+import PhotoCard from "../components/item/PhotoCard";
 import { CATEGORIES, getCategory } from "../constants/categories";
 import { deleteItems, getAllItems } from "../db/items";
 import { syncReminders } from "../services/notifications";
@@ -152,9 +152,9 @@ export default function Library() {
                 </Text>
               </View>
             ) : (
-              <View className="flex-row items-center ">
+              <View className="flex-row items-center gap-1">
                 {items.length !== 0 && (
-                  <Mochiku mood={"idle"} height={70} width={70} />
+                  <Mochiku mood={"idle"} height={60} width={60} />
                 )}
                 <View>
                   <Text className="text-3xl font-display text-ink">

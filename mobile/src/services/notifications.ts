@@ -90,7 +90,7 @@ async function runSync() {
     for (const r of REMINDERS) {
       const when = new Date(item.deadline_at!);
       when.setDate(when.getDate() - r.daysBefore);
-      when.setHours(9, 0, 0, 0);
+      when.setHours(now.getHours(), now.getMinutes(), now.getSeconds() + 5, 0);
       if (when <= now) continue;
 
       await Notifications.scheduleNotificationAsync({
@@ -108,6 +108,15 @@ async function runSync() {
       });
     }
   }
+}
+
+export async function getNotificationPermissionStatus(): Promise<
+  "granted" | "denied" | "undetermined"
+> {
+  const Notifications = getNotifications();
+  if (!Notifications) return "denied";
+  const { status } = await Notifications.getPermissionsAsync();
+  return status;
 }
 
 // export async function sendTestNotification(seconds = 5) {

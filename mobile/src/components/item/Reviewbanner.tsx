@@ -22,7 +22,9 @@ function MascotBubble({
           style={softShadow}
         >
           {children}
-          <View className="absolute -left-2 top-6 w-3 h-3 rotate-45 bg-paper border-l border-b border-line" />
+          <View
+            className={`absolute -left-2 top-6 w-3 h-3 rotate-45 border-l border-b ${bubble}`}
+          />
         </View>
       </View>
     </View>

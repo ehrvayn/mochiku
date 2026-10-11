@@ -1,9 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image, Text, TouchableOpacity, View } from "react-native";
-import { getCategory } from "../constants/categories";
-import { getTone } from "../constants/tones";
-import { daysUntil } from "../hooks/useHomeData";
-import { Item } from "../types/item";
+import { getCategory } from "../../constants/categories";
+import { getTone } from "../../constants/tones";
+import { daysUntil } from "../../hooks/useHomeData";
+import { Item } from "../../types/item";
 
 export default function PhotoCard({
   item,

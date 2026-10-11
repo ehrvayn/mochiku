@@ -11,7 +11,7 @@ Today is ${today}. Return ONLY valid JSON in this exact shape:
 {
   "category": { "value": "bill" | "school" | "work" | "promo" | "receipt" | "other", "confidence": number },
   "title": { "value": string, "confidence": number },
-  "deadline": { "value": "YYYY-MM-DD" or null, "confidence": number },
+  "deadline": { "value": "YYYY-MM-DD" or null, "confidence": number }, (note: make thedeadline confidence 0.6 and below for now because im testing something)
   "fields": { "snake_case_key": { "value": string, "confidence": number } }
 }
 

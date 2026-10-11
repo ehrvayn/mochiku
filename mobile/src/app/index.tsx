@@ -1,29 +1,42 @@
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
+import { router, Stack } from "expo-router";
+import Storage from "expo-sqlite/kv-store";
+import { useEffect, useRef, useState } from "react";
+import { savePhotoPermanently } from "../services/photos";
+import { uploadPhoto } from "../services/upload";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { AllowAccess } from "../components/AllowAccess";
+import Mochiku, { Mood } from "../components/Mochiku";
+import { insertItem, saveExtractedData } from "../db/items";
 import {
   CameraType,
   CameraView,
   FlashMode,
   useCameraPermissions,
 } from "expo-camera";
-import * as ImagePicker from "expo-image-picker";
-import { router, Stack } from "expo-router";
-import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
+  AppState,
+  Linking,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Mochiku, { Mood } from "../components/Mochiku";
-import { insertItem, saveExtractedData } from "../db/items";
-import { savePhotoPermanently } from "../services/photos";
-import { uploadPhoto } from "../services/upload";
+
+import {
+  getNotificationPermissionStatus,
+  registerForNotificationsAsync,
+  syncReminders,
+} from "../services/notifications";
 
 type Status = "idle" | "processing" | "retrying" | "done" | "error";
 type ActiveStatus = Exclude<Status, "idle">;
+type NotifStatus = "granted" | "denied" | "undetermined";
+
+const ASKED_KEY = "access_asked";
 
 const STATUS_COPY: Record<ActiveStatus, string> = {
   processing: "Reading your photo...",
@@ -91,7 +104,7 @@ function StatusPopup({ status }: { status: ActiveStatus }) {
       <Animated.View
         style={{ alignItems: "center", gap: 12, transform: [{ scale }] }}
       >
-        <Mochiku mood={STATUS_MOOD[status]} height={200} width={110} />
+        <Mochiku mood={STATUS_MOOD[status]} height={200} width={140} />
 
         <View className="flex-row items-center gap-2 bg-paper rounded-3xl px-5 py-3 max-w-[300px]">
           {busy && <ActivityIndicator size="small" color="#FF8A4C" />}
@@ -112,8 +125,12 @@ function StatusPopup({ status }: { status: ActiveStatus }) {
 
 export default function CameraScreen() {
   const insets = useSafeAreaInsets();
-  const [permission, requestPermission] = useCameraPermissions();
+  const [permission, requestPermission, getPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
+  const [notifStatus, setNotifStatus] = useState<NotifStatus | null>(null);
+  const [asked, setAsked] = useState(
+    () => Storage.getItemSync(ASKED_KEY) === "1",
+  );
   const [facing, setFacing] = useState<CameraType>("back");
   const [flash, setFlash] = useState<FlashMode>("off");
   const [status, setStatus] = useState<Status>("idle");
@@ -131,7 +148,35 @@ export default function CameraScreen() {
       setZoom(Math.min(1, Math.max(0, next)));
     });
 
-  if (!permission) {
+  useEffect(() => {
+    getNotificationPermissionStatus().then(setNotifStatus);
+  }, []);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        getPermission();
+        getNotificationPermissionStatus().then((s) => {
+          setNotifStatus(s);
+          if (s === "granted") syncReminders();
+        });
+      }
+    });
+    return () => sub.remove();
+  }, [getPermission]);
+
+  const handleAllowAll = async () => {
+    const cam = await requestPermission();
+    await registerForNotificationsAsync();
+    const notif = await getNotificationPermissionStatus();
+    setNotifStatus(notif);
+    if (notif === "granted") syncReminders();
+    Storage.setItemSync(ASKED_KEY, "1");
+    setAsked(true);
+    if (!cam.granted && !cam.canAskAgain) Linking.openSettings();
+  };
+
+  if (!permission || notifStatus === null) {
     return (
       <View className="flex-1 bg-black">
         <Stack.Screen options={{ headerShown: false }} />
@@ -139,32 +184,8 @@ export default function CameraScreen() {
     );
   }
 
-  if (!permission.granted) {
-    return (
-      <View className="flex-1 bg-cream items-center justify-center px-8 gap-6">
-        <Stack.Screen options={{ headerShown: false }} />
-        <View className="w-20 h-20 rounded-3xl bg-brand-soft items-center justify-center">
-          <Ionicons name="camera-outline" size={36} color="#C2531A" />
-        </View>
-        <View className="items-center gap-2">
-          <Text className="text-2xl font-display text-ink">
-            Allow camera access
-          </Text>
-          <Text className="text-sm font-body text-ink-soft text-center">
-            mochiku needs your camera to scan bills, receipts and notices.
-          </Text>
-        </View>
-        <TouchableOpacity
-          onPress={requestPermission}
-          activeOpacity={0.85}
-          className="w-full bg-brand py-4 rounded-full items-center"
-        >
-          <Text className="text-white font-heading text-base">
-            Allow camera
-          </Text>
-        </TouchableOpacity>
-      </View>
-    );
+  if (!permission.granted || (!asked && notifStatus !== "granted")) {
+    return <AllowAccess onAllow={handleAllowAll} />;
   }
 
   const busy = status === "processing" || status === "retrying";
@@ -188,6 +209,7 @@ export default function CameraScreen() {
       }
 
       await saveExtractedData(itemId, result.extracted);
+      await syncReminders();
       setStatus("done");
     } catch {
       setStatus("error");

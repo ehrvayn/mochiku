@@ -27,6 +27,10 @@ export default function Mochiku({
   width?: number;
 }) {
   return (
-    <Image source={IMAGES[mood]} style={{ width: width, height: height }} />
+    <Image
+      source={IMAGES[mood]}
+      style={{ width: width, height: height }}
+      resizeMode="contain"
+    />
   );
 }

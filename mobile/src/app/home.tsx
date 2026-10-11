@@ -97,7 +97,7 @@ export default function Home() {
         weekCount,
         pendingCount: pending.length,
       }),
-    [hero, overdueCount, weekCount, pending.length]
+    [hero, overdueCount, weekCount, pending.length],
   );
 
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -209,7 +209,8 @@ export default function Home() {
               Your Shelf is Empty
             </Text>
             <Text className="text-xs font-body-medium text-ink-faint text-center max-w-[240px]">
-              Deadlines from your scanned photos will show up here automatically.
+              Deadlines from your scanned photos will show up here
+              automatically.
             </Text>
           </View>
         )}
