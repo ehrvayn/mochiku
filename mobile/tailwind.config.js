@@ -21,6 +21,7 @@ module.exports = {
         brand: "#FF8A4C",
         "brand-soft": "#FFE9DB",
         "brand-ink": "#C2531A", // orange text that stays readable
+        "brand-deep": "#8A3A0D", // darkest orange, for text on bg-brand
 
         // urgency (these carry meaning, never use them as decoration)
         urgent: "#F25C54",

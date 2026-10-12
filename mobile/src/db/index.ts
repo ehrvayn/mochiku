@@ -21,6 +21,15 @@ async function migrate(db: SQLite.SQLiteDatabase) {
     PRAGMA journal_mode = WAL;
     PRAGMA foreign_keys = ON;
 
+    CREATE TABLE IF NOT EXISTS user (
+      id TEXT PRIMARY KEY NOT NULL,
+      name TEXT NOT NULL,
+      onboarding_completed INTEGER NOT NULL DEFAULT 0,
+      reminder_time TEXT NOT NULL DEFAULT '09:00',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS items (
       id TEXT PRIMARY KEY NOT NULL,
       local_image_uri TEXT NOT NULL,

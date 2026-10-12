@@ -1,0 +1,118 @@
+import { Ionicons } from "@expo/vector-icons";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { Stack } from "expo-router";
+import { useEffect, useState } from "react";
+import { Platform, Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { updateUser, getUser } from "../db/user";
+
+function parseHHMM(value: string | undefined) {
+  const d = new Date();
+  const [h, m] = (value ?? "09:00").split(":").map(Number);
+  d.setHours(Number.isFinite(h) ? h : 9, Number.isFinite(m) ? m : 0, 0, 0);
+  return d;
+}
+
+function toHHMM(date: Date) {
+  const h = `${date.getHours()}`.padStart(2, "0");
+  const m = `${date.getMinutes()}`.padStart(2, "0");
+  return `${h}:${m}`;
+}
+
+export default function Settings() {
+  const insets = useSafeAreaInsets();
+  const [time, setTime] = useState(() => parseHHMM("09:00"));
+  const [saved, setSaved] = useState(false);
+  const [showPicker, setShowPicker] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    getUser().then((user) => {
+      if (!cancelled && user) setTime(parseHHMM(user.reminder_time));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleChange = (_e: unknown, selected?: Date) => {
+    if (Platform.OS === "android") setShowPicker(false);
+    if (selected) {
+      setTime(selected);
+      setSaved(false);
+    }
+  };
+
+  const handleSave = async () => {
+    await updateUser({ reminder_time: toHHMM(time) });
+    setSaved(true);
+  };
+
+  return (
+    <View className="flex-1 bg-cream">
+      <Stack.Screen options={{ headerShown: false }} />
+
+      <View
+        className="mb-6 bg-brand rounded-b-[50px] px-5"
+        style={{ paddingTop: insets.top + 16, paddingBottom: 28 }}
+      >
+        <Text className="text-3xl font-display text-brand-deep">Settings</Text>
+        <Text className="text-xs font-body-medium text-brand-deep/80">
+          How Mochiku should behave
+        </Text>
+      </View>
+
+      <View
+        className="flex-1 px-5"
+        style={{ paddingBottom: insets.bottom + 128 }}
+      >
+        <Text className="text-xs font-body-bold text-brand-ink mb-2">
+          Reminder time
+        </Text>
+
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => setShowPicker(true)}
+          className="bg-paper rounded-2xl px-4 py-3.5 border border-line flex-row items-center justify-between"
+        >
+          {Platform.OS === "ios" ? (
+            <DateTimePicker
+              value={time}
+              mode="time"
+              display="compact"
+              onChange={handleChange}
+              style={{ alignSelf: "flex-start" }}
+            />
+          ) : (
+            <Text className="text-base font-body-medium text-ink">
+              {time.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </Text>
+          )}
+          <Ionicons name="time-outline" size={18} color="#C2531A" />
+        </TouchableOpacity>
+
+        {Platform.OS !== "ios" && showPicker && (
+          <DateTimePicker value={time} mode="time" onChange={handleChange} />
+        )}
+
+        <TouchableOpacity
+          onPress={handleSave}
+          activeOpacity={0.85}
+          className="mt-4 w-full py-4 rounded-full bg-brand items-center"
+        >
+          <Text className="text-white font-heading text-base">
+            {saved ? "Saved" : "Save"}
+          </Text>
+        </TouchableOpacity>
+
+        <Text className="text-xs font-body text-ink-faint mt-4">
+          Mochiku nudges you on this time each day while something is still
+          open.
+        </Text>
+      </View>
+    </View>
+  );
+}

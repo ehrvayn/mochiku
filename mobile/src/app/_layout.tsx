@@ -1,11 +1,12 @@
 import "../global.css";
-import { Stack } from "expo-router";
+import { Redirect, Stack, useSegments } from "expo-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { View, Text, StyleSheet } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import FloatingNav from "../components/FloatingNav";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { syncReminders } from "../services/notifications";
+import { ensureLocalUser } from "../db/user";
 import { Nunito_700Bold, Nunito_800ExtraBold } from "@expo-google-fonts/nunito";
 import {
   DMSans_400Regular,
@@ -18,7 +19,6 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withSequence,
   runOnJS,
 } from "react-native-reanimated";
 import { useVideoPlayer, VideoView } from "expo-video";
@@ -47,6 +47,11 @@ export default function RootLayout() {
   });
 
   const [showIntro, setShowIntro] = useState(true);
+  // null = still reading the user row, true = needs onboarding,
+  // false = onboarded and free to enter the app.
+  const [needsOnboarding, setNeedsOnboarding] = useState<boolean | null>(null);
+  const segments = useSegments();
+  const inOnboarding = segments[0] === "onboarding";
 
   const opacity = useSharedValue(1);
 
@@ -74,7 +79,37 @@ export default function RootLayout() {
 
   useEffect(() => {
     syncReminders();
+
+    ensureLocalUser()
+      .then((user) => {
+        setNeedsOnboarding(!user?.onboarding_completed);
+      })
+      .catch(() => {
+        setNeedsOnboarding(false);
+      });
   }, []);
+
+  // The last onboarding step writes onboarding_completed itself, so this
+  // layout's value is stale by the time the user lands back on the app.
+  // Re-read once, on the render right after leaving /onboarding.
+  const prevInOnboarding = useRef(inOnboarding);
+  const justLeftOnboarding = prevInOnboarding.current && !inOnboarding;
+  prevInOnboarding.current = inOnboarding;
+
+  useEffect(() => {
+    if (needsOnboarding === null || inOnboarding || !justLeftOnboarding) return;
+    let cancelled = false;
+    ensureLocalUser()
+      .then((user) => {
+        if (!cancelled) setNeedsOnboarding(!user?.onboarding_completed);
+      })
+      .catch(() => {
+        if (!cancelled) setNeedsOnboarding(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [needsOnboarding, inOnboarding, justLeftOnboarding]);
 
   if (!loaded) return null;
 
@@ -94,13 +129,30 @@ export default function RootLayout() {
     );
   }
 
+  if (needsOnboarding === null) return null;
+
+  // Hold the redirect during the post-onboarding re-read. Redirect fires on
+  // mount, so redirecting before that read resolves would bounce the user
+  // back into /onboarding and spin the render loop.
+  if (needsOnboarding && !inOnboarding && !justLeftOnboarding) {
+    return <Redirect href="/onboarding" />;
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
         <View style={{ flex: 1 }}>
           <Stack
             screenOptions={{ contentStyle: { backgroundColor: "#FFF8EC" } }}
-          />
+          >
+            {/* The root stack renders a header for the "onboarding" segment
+                itself; the nested onboarding/_layout.tsx only controls its
+                own children. Hide it here. */}
+            <Stack.Screen
+              name="onboarding"
+              options={{ headerShown: false }}
+            />
+          </Stack>
           <FloatingNav />
         </View>
       </QueryClientProvider>

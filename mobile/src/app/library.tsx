@@ -136,7 +136,10 @@ export default function Library() {
       <Stack.Screen options={{ headerShown: false }} />
 
       <View className="flex-1 bg-cream">
-        <View className="px-5" style={{ paddingTop: insets.top + 16 }}>
+        <View
+          className="bg-brand rounded-b-[50px] px-5 pb-4"
+          style={{ paddingTop: insets.top + 16 }}
+        >
           <View className="flex-row items-center justify-between mb-1">
             {selecting ? (
               <View className="flex-row items-center gap-3">
@@ -147,7 +150,7 @@ export default function Library() {
                 >
                   <Ionicons name="close" size={20} color="#2B2438" />
                 </TouchableOpacity>
-                <Text className="text-xl font-heading text-ink">
+                <Text className="text-xl font-heading text-brand-deep">
                   {picked.size} selected
                 </Text>
               </View>
@@ -157,10 +160,10 @@ export default function Library() {
                   <Mochiku mood={"idle"} height={60} width={60} />
                 )}
                 <View>
-                  <Text className="text-3xl font-display text-ink">
+                  <Text className="text-3xl font-display text-brand-deep">
                     Library
                   </Text>
-                  <Text className="text-xs font-body-medium text-ink-faint">
+                  <Text className="text-xs font-body-medium text-brand-deep">
                     {items.length === 0
                       ? "Nothing stored yet"
                       : `${items.length} ${items.length === 1 ? "thing" : "things"} remembered`}

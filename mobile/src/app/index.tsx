@@ -185,7 +185,17 @@ export default function CameraScreen() {
   }
 
   if (!permission.granted || (!asked && notifStatus !== "granted")) {
-    return <AllowAccess onAllow={handleAllowAll} />;
+    return (
+      <View
+        className="flex-1 bg-cream"
+        style={{
+          paddingTop: insets.top + 16,
+          paddingBottom: insets.bottom + 16,
+        }}
+      >
+        <AllowAccess onAllow={handleAllowAll} />
+      </View>
+    );
   }
 
   const busy = status === "processing" || status === "retrying";

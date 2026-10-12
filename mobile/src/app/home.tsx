@@ -1,5 +1,6 @@
 import { Stack } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
+import { getUser } from "../db/user";
 import { RefreshControl, ScrollView, Text, View } from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -20,8 +21,12 @@ function getStates(s: {
   overdueCount: number;
   weekCount: number;
   pendingCount: number;
+  name?: string;
 }): StatusItem[] {
   const states: StatusItem[] = [];
+  // Only greeting-style messages use the name; task reports read better
+  // without it. Empty means a brand-new user, who has no name yet.
+  const hi = s.name ? `Hey ${s.name}, ` : "";
 
   if (s.hero && s.hero.days <= 1) {
     states.push({
@@ -53,7 +58,7 @@ function getStates(s: {
   if (s.weekCount > 0) {
     states.push({
       id: "week",
-      message: `Looking solid! ${s.weekCount} item${s.weekCount === 1 ? "" : "s"} scheduled for this week.`,
+      message: `${hi}looking solid! ${s.weekCount} item${s.weekCount === 1 ? "" : "s"} scheduled for this week.`,
       mood: "happy",
     });
   }
@@ -62,13 +67,13 @@ function getStates(s: {
     if (s.hero) {
       states.push({
         id: "hero-idle",
-        message: `Smooth sailing! Nothing urgent until ${s.hero.days} days from now.`,
+        message: `${hi}smooth sailing! Nothing urgent until ${s.hero.days} days from now.`,
         mood: "happy",
       });
     } else {
       states.push({
         id: "empty",
-        message: "Your shelf is totally clear. Snap a photo to catch dates!",
+        message: `${hi}your shelf is totally clear. Snap a photo to catch dates!`,
         mood: "sleeping",
       });
     }
@@ -89,6 +94,22 @@ export default function Home() {
     refresh,
   } = useHomeData();
 
+  const [name, setName] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    getUser().then((user) => {
+      // "Friend" is the seeded default from ensureLocalUser — don't greet
+      // anyone by it, since they never chose it.
+      if (!cancelled && user?.name && user.name !== "Friend") {
+        setName(user.name);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const states = useMemo(
     () =>
       getStates({
@@ -96,8 +117,9 @@ export default function Home() {
         overdueCount,
         weekCount,
         pendingCount: pending.length,
+        name,
       }),
-    [hero, overdueCount, weekCount, pending.length],
+    [hero, overdueCount, weekCount, pending.length, name],
   );
 
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -126,7 +148,6 @@ export default function Home() {
       <ScrollView
         className="flex-1"
         contentContainerStyle={{
-          paddingTop: insets.top + 16,
           paddingBottom: insets.bottom + 128,
         }}
         refreshControl={
@@ -139,7 +160,10 @@ export default function Home() {
         }
         showsVerticalScrollIndicator={false}
       >
-        <View className="mb-6 px-5 min-h-[140px] justify-center">
+        <View
+          className="mb-6 bg-brand pb-6 rounded-b-[50px] px-5 justify-center"
+          style={{ paddingTop: insets.top + 16, minHeight: insets.top + 140 }}
+        >
           <Animated.View
             key={activeState.id}
             entering={FadeIn.duration(350)}
