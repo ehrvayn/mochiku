@@ -1,8 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image, Text, TouchableOpacity, View } from "react-native";
-import { getCategory } from "../constants/categories";
+import { getCategory, useCategoryColors } from "../constants/categories";
 import { getTone } from "../constants/tones";
 import { daysUntil } from "../hooks/useHomeData";
+import { useThemeColor } from "../theme";
 import { Item } from "../types/item";
 
 export default function LibraryItemRow({
@@ -18,8 +19,11 @@ export default function LibraryItemRow({
   onPress: () => void;
   onLongPress: () => void;
 }) {
-  const cat = getCategory(item.category);
+  const categoryColors = useCategoryColors();
+  const category = getCategory(item.category);
+  const cat = categoryColors[category.label];
   const tone = item.deadline_at ? getTone(daysUntil(item.deadline_at)) : null;
+  const chevron = useThemeColor("line", "#F0E4CF");
 
   return (
     <TouchableOpacity
@@ -51,7 +55,7 @@ export default function LibraryItemRow({
             className="absolute -top-1 -left-1 w-6 h-6 rounded-full items-center justify-center"
             style={{ backgroundColor: cat.bg }}
           >
-            <Ionicons name={cat.icon} size={12} color={cat.fg} />
+            <Ionicons name={category.icon} size={12} color={cat.fg} />
           </View>
         )}
       </View>
@@ -62,7 +66,7 @@ export default function LibraryItemRow({
         </Text>
         <View className="flex-row items-center gap-2 flex-wrap">
           <Text className="text-xs font-body-medium" style={{ color: cat.fg }}>
-            {cat.label}
+            {category.label}
           </Text>
           {tone && (
             <View className={`${tone.box} rounded-full px-2.5 py-0.5`}>
@@ -75,7 +79,7 @@ export default function LibraryItemRow({
       </View>
 
       {!selecting && (
-        <Ionicons name="chevron-forward" size={18} color="#D9D0C0" />
+        <Ionicons name="chevron-forward" size={18} color={chevron} />
       )}
     </TouchableOpacity>
   );

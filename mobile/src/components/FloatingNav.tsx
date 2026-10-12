@@ -3,6 +3,7 @@ import { router, usePathname } from "expo-router";
 import { TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { softShadow } from "../constants/tones";
+import { useThemeColor } from "../theme";
 
 const VISIBLE_ON = ["/home", "/library", "/profile", "/settings"];
 
@@ -40,6 +41,7 @@ function NavItem({
 export default function FloatingNav() {
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
+  const brandInk = useThemeColor("brand-ink", "#C2531A");
 
   if (!VISIBLE_ON.includes(pathname)) return null;
 
@@ -79,7 +81,7 @@ export default function FloatingNav() {
           className="w-[72px] h-[72px] mb-3 rounded-full bg-cream items-center justify-center border-4 border-brand"
           style={softShadow}
         >
-          <Ionicons name="camera" size={30} color="#C2531A" />
+          <Ionicons name="camera" size={30} color={brandInk} />
         </TouchableOpacity>
 
         <View className="flex-row items-end gap-3">

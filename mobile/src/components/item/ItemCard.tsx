@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { Text, TouchableOpacity, View } from "react-native";
-import { getCategory } from "../../constants/categories";
+import { getCategory, useCategoryColors } from "../../constants/categories";
 import { getTone } from "../../constants/tones";
 import { daysUntil } from "../../hooks/useHomeData";
 import { Item } from "../../types/item";
@@ -20,7 +20,7 @@ export default function ItemCard({
   showStatus?: boolean;
 }) {
   const tone = item.deadline_at ? getTone(daysUntil(item.deadline_at)) : null;
-  const cat = getCategory(item.category);
+  const cat = useCategoryColors()[getCategory(item.category).label];
 
   return (
     <TouchableOpacity

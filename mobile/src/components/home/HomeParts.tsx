@@ -1,9 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Image, Text, TouchableOpacity, View } from "react-native";
-import { getCategory } from "../../constants/categories";
+import { getCategory, useCategoryColors } from "../../constants/categories";
 import { getTone, softShadow } from "../../constants/tones";
 import { DeadlineEntry, MONTHS } from "../../hooks/useHomeData";
+import { useThemeColor } from "../../theme";
 import { Item } from "../../types/item";
 import Mochiku, { Mood } from "../Mochiku";
 
@@ -18,12 +19,14 @@ const shortDate = (iso: string) =>
   });
 
 function CategoryTag({ value }: { value: string | null }) {
-  const c = getCategory(value);
+  const categoryColors = useCategoryColors();
+  const category = getCategory(value);
+  const c = categoryColors[category.label];
   return (
     <View className="flex-row items-center w-auto gap-1.5 px-2.5 py-1 rounded-full bg-cream border border-line">
-      <Ionicons name={c.icon} size={12} color={c.fg} />
+      <Ionicons name={category.icon} size={12} color={c.fg} />
       <Text className="text-[11px] font-body-bold" style={{ color: c.fg }}>
-        {c.label}
+        {category.label}
       </Text>
     </View>
   );
@@ -119,6 +122,8 @@ export function SectionHeader({
 }
 
 export function ReviewCard({ item }: { item: Item }) {
+  const inkFaint = useThemeColor("ink-faint", "#A39DB0");
+
   return (
     <TouchableOpacity
       activeOpacity={0.85}
@@ -142,7 +147,7 @@ export function ReviewCard({ item }: { item: Item }) {
           </Text>
         </View>
       </View>
-      <Ionicons name="chevron-forward" size={16} color="#A39DB0" />
+      <Ionicons name="chevron-forward" size={16} color={inkFaint} />
     </TouchableOpacity>
   );
 }

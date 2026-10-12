@@ -6,9 +6,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Mochiku from "../components/Mochiku";
 import { softShadow } from "../constants/tones";
 import { getUser } from "../db/user";
+import { useThemeColor } from "../theme";
 
 export default function Profile() {
   const insets = useSafeAreaInsets();
+  const inkFaint = useThemeColor("ink-faint", "#A39DB0");
   const [user, setUser] = useState<{
     name: string;
     reminder_time: string;
@@ -74,7 +76,7 @@ export default function Profile() {
             <Ionicons
               name="information-circle-outline"
               size={16}
-              color="#A39DB0"
+              color={inkFaint}
               style={{ marginTop: 1 }}
             />
             <Text className="text-xs font-body text-ink-faint flex-1">
@@ -96,10 +98,12 @@ function Row({
   label: string;
   value: string;
 }) {
+  const brandInk = useThemeColor("brand-ink", "#C2531A");
+
   return (
     <View className="flex-row items-center justify-between px-4 py-4">
       <View className="flex-row items-center gap-3">
-        <Ionicons name={icon} size={18} color="#C2531A" />
+        <Ionicons name={icon} size={18} color={brandInk} />
         <Text className="text-sm font-body-medium text-ink-soft">{label}</Text>
       </View>
       <Text className="text-sm font-body-bold text-ink">{value}</Text>

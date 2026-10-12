@@ -3,10 +3,12 @@ import { useState } from "react";
 import { TextInput, View } from "react-native";
 import { OnboardingShell } from "../../components/onboarding/OnboardingShell";
 import { updateUser } from "../../db/user";
+import { useThemeColor } from "../../theme";
 
 export default function Name() {
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
+  const inkFaint = useThemeColor("ink-faint", "#A39DB0");
 
   const trimmed = name.trim();
   const canContinue = trimmed.length > 0 && !saving;
@@ -41,7 +43,7 @@ export default function Name() {
             value={name}
             onChangeText={setName}
             placeholder="Your name"
-            placeholderTextColor="#A39DB0"
+            placeholderTextColor={inkFaint}
             autoCapitalize="words"
             autoCorrect={false}
             returnKeyType="next"

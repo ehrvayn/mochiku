@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Text, TextInput, View } from "react-native";
+import { useThemeColor } from "../../theme";
 import { ItemField } from "../../types/item";
 
 export const formatKey = (key: string) =>
@@ -18,6 +19,9 @@ export default function FieldRow({
   low: boolean;
   onChange: (text: string) => void;
 }) {
+  const inkFaint = useThemeColor("ink-faint", "#A39DB0");
+  const soonInk = useThemeColor("soon-ink", "#9A6400");
+
   return (
     <View className="gap-1.5">
       <View className="flex-row items-center justify-between">
@@ -26,7 +30,7 @@ export default function FieldRow({
         </Text>
         {low && (
           <View className="flex-row items-center gap-1">
-            <Ionicons name="alert-circle-outline" size={13} color="#9A6400" />
+            <Ionicons name="alert-circle-outline" size={13} color={soonInk} />
             <Text className="text-[11px] font-body-bold text-soon-ink">
               Check this
             </Text>
@@ -44,7 +48,7 @@ export default function FieldRow({
           value={value}
           onChangeText={onChange}
           placeholder="Unspecified"
-          placeholderTextColor="#A39DB0"
+          placeholderTextColor={inkFaint}
         />
       ) : (
         <View

@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useThemeColor } from "../../theme";
 
 export default function EditableHeader({
   title,
@@ -23,6 +24,9 @@ export default function EditableHeader({
   deadlineLow: boolean;
 }) {
   const [showAndroidPicker, setShowAndroidPicker] = useState(false);
+  const brandInk = useThemeColor("brand-ink", "#C2531A");
+  const inkFaint = useThemeColor("ink-faint", "#A39DB0");
+  const soonInk = useThemeColor("soon-ink", "#9A6400");
 
   const handleChange = (_event: unknown, date?: Date) => {
     setShowAndroidPicker(false);
@@ -40,7 +44,7 @@ export default function EditableHeader({
           value={title}
           onChangeText={onTitleChange}
           placeholder="Untitled"
-          placeholderTextColor="#A39DB0"
+          placeholderTextColor={inkFaint}
         />
       </View>
 
@@ -51,7 +55,7 @@ export default function EditableHeader({
           </Text>
           {deadlineLow && (
             <View className="flex-row items-center gap-1">
-              <Ionicons name="help-circle-outline" size={14} color="#9A6400" />
+              <Ionicons name="help-circle-outline" size={14} color={soonInk} />
               <Text className="text-xs font-body-bold text-soon-ink">
                 Double-check date
               </Text>
@@ -80,7 +84,7 @@ export default function EditableHeader({
                   <Text className="text-base font-body-medium text-ink">
                     {deadline.toDateString()}
                   </Text>
-                  <Ionicons name="calendar-outline" size={18} color="#C2531A" />
+                  <Ionicons name="calendar-outline" size={18} color={brandInk} />
                   {showAndroidPicker && (
                     <DateTimePicker
                       value={deadline}
@@ -97,7 +101,7 @@ export default function EditableHeader({
             className="bg-cream/40 border border-dashed border-brand/40 rounded-2xl px-4 py-3.5 items-center justify-center flex-row gap-2"
             onPress={() => onDeadlineChange(new Date())}
           >
-            <Ionicons name="add-circle-outline" size={18} color="#C2531A" />
+            <Ionicons name="add-circle-outline" size={18} color={brandInk} />
             <Text className="text-sm font-body-bold text-brand">
               Add deadline
             </Text>

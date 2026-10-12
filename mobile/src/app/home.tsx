@@ -13,6 +13,8 @@ import {
   SectionHeader,
 } from "../components/home/HomeParts";
 import { DeadlineEntry, useHomeData } from "../hooks/useHomeData";
+import { useThemeColor } from "../theme";
+import { useColorScheme } from "nativewind";
 
 type StatusItem = { id: string; message: string; mood: Mood };
 
@@ -24,8 +26,6 @@ function getStates(s: {
   name?: string;
 }): StatusItem[] {
   const states: StatusItem[] = [];
-  // Only greeting-style messages use the name; task reports read better
-  // without it. Empty means a brand-new user, who has no name yet.
   const hi = s.name ? `Hey ${s.name}, ` : "";
 
   if (s.hero && s.hero.days <= 1) {
@@ -93,14 +93,14 @@ export default function Home() {
     refreshing,
     refresh,
   } = useHomeData();
+  const brand = useThemeColor("brand", "#FF8A4C");
 
   const [name, setName] = useState("");
+  const { colorScheme } = useColorScheme();
 
   useEffect(() => {
     let cancelled = false;
     getUser().then((user) => {
-      // "Friend" is the seeded default from ensureLocalUser — don't greet
-      // anyone by it, since they never chose it.
       if (!cancelled && user?.name && user.name !== "Friend") {
         setName(user.name);
       }
@@ -154,14 +154,14 @@ export default function Home() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={refresh}
-            tintColor="#FF8A4C"
-            colors={["#FF8A4C"]}
+            tintColor={brand}
+            colors={[brand]}
           />
         }
         showsVerticalScrollIndicator={false}
       >
         <View
-          className="mb-6 bg-brand pb-6 rounded-b-[50px] px-5 justify-center"
+          className={`mb-6 pb-6 rounded-b-[50px] px-5 justify-center ${colorScheme === "dark" ? "bg-white" : "bg-brand"}`}
           style={{ paddingTop: insets.top + 16, minHeight: insets.top + 140 }}
         >
           <Animated.View

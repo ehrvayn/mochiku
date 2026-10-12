@@ -8,7 +8,7 @@ import FieldRow, { formatKey } from "../../components/item/Fieldrow";
 import ReviewBanner from "../../components/item/Reviewbanner";
 import ImageSection from "../../components/item/ImageSection";
 import DeleteItemModal from "../../components/modal/DeleteItemModal";
-import { getCategory } from "../../constants/categories";
+import { getCategory, useCategoryColors } from "../../constants/categories";
 import { getTone, softShadow } from "../../constants/tones";
 import {
   confirmItem,
@@ -21,12 +21,17 @@ import {
 } from "../../db/items";
 import { daysUntil } from "../../hooks/useHomeData";
 import { syncReminders } from "../../services/notifications";
+import { useThemeColor } from "../../theme";
 import { ItemField } from "../../types/item";
 
 const LOW_CONFIDENCE = 0.7;
 
 export default function Review() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const cream = useThemeColor("cream", "#FFF8EC");
+  const ink = useThemeColor("ink", "#2B2438");
+  const urgentInk = useThemeColor("urgent-ink", "#C73E37");
+  const categoryColors = useCategoryColors();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
@@ -99,7 +104,8 @@ export default function Review() {
   const fieldsEditable = needsReview || isEditing;
 
   const tone = item.deadline_at ? getTone(daysUntil(item.deadline_at)) : null;
-  const cat = getCategory(item.category);
+  const category = getCategory(item.category);
+  const cat = categoryColors[category.label];
 
   const isLow = (f: ItemField) =>
     f.confidence !== null &&
@@ -172,9 +178,9 @@ export default function Review() {
       <Stack.Screen
         options={{
           title: needsReview ? "Review Snap" : "Item Details",
-          headerStyle: { backgroundColor: "#FFF8EC" },
+          headerStyle: { backgroundColor: cream },
           headerShadowVisible: false,
-          headerTintColor: "#2B2438",
+          headerTintColor: ink,
           headerTitleStyle: { fontFamily: "Nunito_800ExtraBold" },
           headerRight: () => (
             <View className="flex-row items-center gap-4">
@@ -198,7 +204,7 @@ export default function Review() {
                 hitSlop={10}
                 className="p-1.5"
               >
-                <Ionicons name="trash-outline" size={20} color="#C73E37" />
+                <Ionicons name="trash-outline" size={20} color={urgentInk} />
               </TouchableOpacity>
             </View>
           ),
@@ -234,12 +240,12 @@ export default function Review() {
                 className="flex-row items-center gap-1.5 rounded-full px-3 py-1 border border-line"
                 style={{ backgroundColor: cat.bg }}
               >
-                <Ionicons name={cat.icon} size={12} color={cat.fg} />
+                <Ionicons name={category.icon} size={12} color={cat.fg} />
                 <Text
                   className="text-xs font-body-bold"
                   style={{ color: cat.fg }}
                 >
-                  {cat.label}
+                  {category.label}
                 </Text>
               </View>
               {tone && (

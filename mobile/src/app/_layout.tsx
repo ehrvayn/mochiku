@@ -26,6 +26,9 @@ import {
   configureReanimatedLogger,
   ReanimatedLogLevel,
 } from "react-native-reanimated";
+import { StatusBar } from "expo-status-bar";
+import { useColorScheme } from "nativewind";
+import { applyStoredAppearance, useThemeColor } from "../theme";
 
 configureReanimatedLogger({
   level: ReanimatedLogLevel.warn,
@@ -34,10 +37,13 @@ configureReanimatedLogger({
 
 const queryClient = new QueryClient();
 SplashScreen.preventAutoHideAsync();
+applyStoredAppearance();
 
 const introVideoSource = require("../../assets/vid/Mochiku-intro.mp4");
 
 export default function RootLayout() {
+  const { colorScheme } = useColorScheme();
+  const cream = useThemeColor("cream", "#FFF8EC");
   const [loaded] = useFonts({
     Nunito_700Bold,
     Nunito_800ExtraBold,
@@ -47,8 +53,6 @@ export default function RootLayout() {
   });
 
   const [showIntro, setShowIntro] = useState(true);
-  // null = still reading the user row, true = needs onboarding,
-  // false = onboarded and free to enter the app.
   const [needsOnboarding, setNeedsOnboarding] = useState<boolean | null>(null);
   const segments = useSegments();
   const inOnboarding = segments[0] === "onboarding";
@@ -89,9 +93,6 @@ export default function RootLayout() {
       });
   }, []);
 
-  // The last onboarding step writes onboarding_completed itself, so this
-  // layout's value is stale by the time the user lands back on the app.
-  // Re-read once, on the render right after leaving /onboarding.
   const prevInOnboarding = useRef(inOnboarding);
   const justLeftOnboarding = prevInOnboarding.current && !inOnboarding;
   prevInOnboarding.current = inOnboarding;
@@ -131,9 +132,6 @@ export default function RootLayout() {
 
   if (needsOnboarding === null) return null;
 
-  // Hold the redirect during the post-onboarding re-read. Redirect fires on
-  // mount, so redirecting before that read resolves would bounce the user
-  // back into /onboarding and spin the render loop.
   if (needsOnboarding && !inOnboarding && !justLeftOnboarding) {
     return <Redirect href="/onboarding" />;
   }
@@ -142,12 +140,8 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
         <View style={{ flex: 1 }}>
-          <Stack
-            screenOptions={{ contentStyle: { backgroundColor: "#FFF8EC" } }}
-          >
-            {/* The root stack renders a header for the "onboarding" segment
-                itself; the nested onboarding/_layout.tsx only controls its
-                own children. Hide it here. */}
+          <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+          <Stack screenOptions={{ contentStyle: { backgroundColor: cream } }}>
             <Stack.Screen
               name="onboarding"
               options={{ headerShown: false }}

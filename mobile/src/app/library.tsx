@@ -15,15 +15,21 @@ import DeleteItemModal from "../components/modal/DeleteItemModal";
 import DraftStrip from "../components/DraftStrip";
 import Mochiku from "../components/Mochiku";
 import PhotoCard from "../components/item/PhotoCard";
-import { CATEGORIES, getCategory } from "../constants/categories";
+import { CATEGORIES, getCategory, useCategoryColors } from "../constants/categories";
 import { deleteItems, getAllItems } from "../db/items";
 import { syncReminders } from "../services/notifications";
 import { processPendingUploads } from "../services/upload";
+import { useThemeColor } from "../theme";
 import { Item } from "../types/item";
 
 export default function Library() {
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
+  const categoryColors = useCategoryColors();
+  const ink = useThemeColor("ink", "#2B2438");
+  const inkFaint = useThemeColor("ink-faint", "#A39DB0");
+  const line = useThemeColor("line", "#F0E4CF");
+  const brandInk = useThemeColor("brand-ink", "#C2531A");
   const { width } = useWindowDimensions();
   const cardWidth = (width - 40 - 12) / 2;
   const [items, setItems] = useState<Item[]>([]);
@@ -148,7 +154,7 @@ export default function Library() {
                   onPress={exitSelection}
                   className="w-10 h-10 rounded-full bg-paper border border-line items-center justify-center"
                 >
-                  <Ionicons name="close" size={20} color="#2B2438" />
+                  <Ionicons name="close" size={20} color={ink} />
                 </TouchableOpacity>
                 <Text className="text-xl font-heading text-brand-deep">
                   {picked.size} selected
@@ -204,7 +210,7 @@ export default function Library() {
                   <Ionicons
                     name="checkmark-circle-outline"
                     size={15}
-                    color="#C2531A"
+                    color={brandInk}
                   />
                   <Text className="text-xs font-body-bold text-brand-ink">
                     Select
@@ -226,7 +232,7 @@ export default function Library() {
           >
             {["All", ...CATEGORIES.map((c) => c.label)].map((label) => {
               const active = selected === label;
-              const cat = CATEGORIES.find((c) => c.label === label);
+              const cat = active ? categoryColors[label] : undefined;
               return (
                 <TouchableOpacity
                   key={label}
@@ -234,21 +240,15 @@ export default function Library() {
                   onPress={() => setSelected(label)}
                   style={{
                     backgroundColor: active
-                      ? cat
-                        ? cat.bg
-                        : "#2B2438"
+                      ? (cat?.bg ?? ink)
                       : "transparent",
-                    borderColor: active
-                      ? cat
-                        ? cat.fg
-                        : "#2B2438"
-                      : "#E7E0D0",
+                    borderColor: active ? (cat?.fg ?? ink) : line,
                   }}
                   className="flex-row items-center gap-1.5 px-3.5 h-9 rounded-full border mr-2 mb-2"
                 >
                   <Text
                     style={{
-                      color: active ? (cat ? cat.fg : "#fff") : "#2B2438",
+                      color: active ? (cat?.fg ?? "#fff") : ink,
                     }}
                     className="text-sm font-body-bold"
                   >
@@ -260,7 +260,7 @@ export default function Library() {
                         ? cat
                           ? cat.fg
                           : "rgba(255,255,255,0.8)"
-                        : "#A39DB0",
+                        : inkFaint,
                     }}
                     className="text-xs font-body-bold"
                   >

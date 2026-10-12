@@ -2,9 +2,20 @@ import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Stack } from "expo-router";
 import { useEffect, useState } from "react";
-import { Platform, Text, TouchableOpacity, View } from "react-native";
+import {
+  Platform,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { updateUser, getUser } from "../db/user";
+import {
+  isDarkPreferred,
+  storeAppearance,
+  useThemeColor,
+} from "../theme";
 
 function parseHHMM(value: string | undefined) {
   const d = new Date();
@@ -24,6 +35,10 @@ export default function Settings() {
   const [time, setTime] = useState(() => parseHHMM("09:00"));
   const [saved, setSaved] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
+  const [dark, setDark] = useState(isDarkPreferred);
+  const brandColor = useThemeColor("brand", "#FF8A4C");
+  const brandInk = useThemeColor("brand-ink", "#C2531A");
+  const lineColor = useThemeColor("line", "#F0E4CF");
 
   useEffect(() => {
     let cancelled = false;
@@ -48,6 +63,11 @@ export default function Settings() {
     setSaved(true);
   };
 
+  const handleDarkChange = (next: boolean) => {
+    setDark(next);
+    storeAppearance(next ? "dark" : "light");
+  };
+
   return (
     <View className="flex-1 bg-cream">
       <Stack.Screen options={{ headerShown: false }} />
@@ -66,6 +86,25 @@ export default function Settings() {
         className="flex-1 px-5"
         style={{ paddingBottom: insets.bottom + 128 }}
       >
+        <View className="mb-6">
+          <Text className="text-xs font-body-bold text-brand-ink mb-2">
+            Dark mode
+          </Text>
+
+          <View className="bg-paper rounded-2xl px-4 py-3.5 border border-line flex-row items-center justify-between">
+            <Text className="text-base font-body-medium text-ink">
+              {dark ? "On" : "Off"}
+            </Text>
+            <Switch
+              value={dark}
+              onValueChange={handleDarkChange}
+              trackColor={{ false: lineColor, true: brandColor }}
+              thumbColor="#FFFFFF"
+              ios_backgroundColor={lineColor}
+            />
+          </View>
+        </View>
+
         <Text className="text-xs font-body-bold text-brand-ink mb-2">
           Reminder time
         </Text>
@@ -91,7 +130,7 @@ export default function Settings() {
               })}
             </Text>
           )}
-          <Ionicons name="time-outline" size={18} color="#C2531A" />
+          <Ionicons name="time-outline" size={18} color={brandInk} />
         </TouchableOpacity>
 
         {Platform.OS !== "ios" && showPicker && (

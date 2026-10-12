@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Platform, Text, TouchableOpacity, View } from "react-native";
 import { OnboardingShell } from "../../components/onboarding/OnboardingShell";
 import { updateUser } from "../../db/user";
+import { useThemeColor } from "../../theme";
 
 function toHHMM(date: Date) {
   const h = `${date.getHours()}`.padStart(2, "0");
@@ -20,6 +21,7 @@ export default function Reminders() {
   });
   const [showAndroidPicker, setShowAndroidPicker] = useState(false);
   const [saving, setSaving] = useState(false);
+  const brandInk = useThemeColor("brand-ink", "#C2531A");
 
   const handleChange = (
     _event: unknown,
@@ -78,7 +80,7 @@ export default function Reminders() {
               })}
             </Text>
           )}
-          <Ionicons name="time-outline" size={18} color="#C2531A" />
+          <Ionicons name="time-outline" size={18} color={brandInk} />
         </TouchableOpacity>
 
         {Platform.OS !== "ios" && showAndroidPicker && (

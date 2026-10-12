@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { ReactNode } from "react";
 import { Text, View } from "react-native";
 import { softShadow } from "../../constants/tones";
+import { useThemeColor } from "../../theme";
 import Mochiku, { Mood } from "../Mochiku";
 
 function MascotBubble({
@@ -38,6 +39,8 @@ export default function ReviewBanner({
   labels?: string[];
   reviewing?: boolean;
 }) {
+  const soonInk = useThemeColor("soon-ink", "#9A6400");
+
   if (labels.length === 0) {
     if (!reviewing) return null;
     return (
@@ -55,7 +58,7 @@ export default function ReviewBanner({
   if (!reviewing) {
     return (
       <View className="flex-row items-center gap-3 bg-soon-soft rounded-2xl p-4 border border-soon/40">
-        <Ionicons name="help-circle" size={20} color="#9A6400" />
+        <Ionicons name="help-circle" size={20} color={soonInk} />
         <Text className="flex-1 text-xs font-body-bold text-soon-ink">
           {labels.length}{" "}
           {labels.length === 1 ? "detail needs" : "details need"} a quick check

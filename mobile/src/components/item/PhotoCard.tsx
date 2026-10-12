@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image, Text, TouchableOpacity, View } from "react-native";
-import { getCategory } from "../../constants/categories";
+import { getCategory, useCategoryColors } from "../../constants/categories";
 import { getTone } from "../../constants/tones";
 import { daysUntil } from "../../hooks/useHomeData";
 import { Item } from "../../types/item";
@@ -18,7 +18,9 @@ export default function PhotoCard({
   onPress: () => void;
   onLongPress: () => void;
 }) {
-  const cat = getCategory(item.category);
+  const categoryColors = useCategoryColors();
+  const category = getCategory(item.category);
+  const cat = categoryColors[category.label];
   const tone = item.deadline_at ? getTone(daysUntil(item.deadline_at)) : null;
 
   return (
@@ -66,12 +68,12 @@ export default function PhotoCard({
           className="flex-row items-center gap-1 rounded-full px-2 py-0.5 self-start"
           style={{ backgroundColor: cat.bg }}
         >
-          <Ionicons name={cat.icon} size={11} color={cat.fg} />
+          <Ionicons name={category.icon} size={11} color={cat.fg} />
           <Text
             className="text-[11px] font-body-bold"
             style={{ color: cat.fg }}
           >
-            {cat.label}
+            {category.label}
           </Text>
         </View>
       </View>
