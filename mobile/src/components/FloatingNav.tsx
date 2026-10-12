@@ -53,20 +53,23 @@ export default function FloatingNav() {
 
       <View
         pointerEvents="box-none"
-        className="absolute inset-0 flex-row items-end justify-between px-2"
+        className="absolute inset-0 flex-row items-end justify-between px-8"
       >
-        <View className="flex-row items-end gap-0.5">
+
+        <View className="flex-row items-end gap-3">
           <NavItem
-            active={pathname === "/profile"}
-            activeIcon="person"
-            idleIcon="person-outline"
-            onPress={() => pathname !== "/profile" && router.navigate("/profile")}
+            active={pathname === "/home"}
+            activeIcon="home"
+            idleIcon="home-outline"
+            onPress={() => pathname !== "/home" && router.navigate("/home")}
           />
           <NavItem
-            active={pathname === "/settings"}
-            activeIcon="settings"
-            idleIcon="settings-outline"
-            onPress={() => pathname !== "/settings" && router.navigate("/settings")}
+            active={pathname === "/library"}
+            activeIcon="albums"
+            idleIcon="albums-outline"
+            onPress={() =>
+              pathname !== "/library" && router.navigate("/library")
+            }
           />
         </View>
 
@@ -79,20 +82,25 @@ export default function FloatingNav() {
           <Ionicons name="camera" size={30} color="#C2531A" />
         </TouchableOpacity>
 
-        <View className="flex-row items-end gap-0.5">
+        <View className="flex-row items-end gap-3">
           <NavItem
-            active={pathname === "/home"}
-            activeIcon="home"
-            idleIcon="home-outline"
-            onPress={() => pathname !== "/home" && router.navigate("/home")}
+            active={pathname === "/profile"}
+            activeIcon="person"
+            idleIcon="person-outline"
+            onPress={() =>
+              pathname !== "/profile" && router.navigate("/profile")
+            }
           />
           <NavItem
-            active={pathname === "/library"}
-            activeIcon="albums"
-            idleIcon="albums-outline"
-            onPress={() => pathname !== "/library" && router.navigate("/library")}
+            active={pathname === "/settings"}
+            activeIcon="settings"
+            idleIcon="settings-outline"
+            onPress={() =>
+              pathname !== "/settings" && router.navigate("/settings")
+            }
           />
         </View>
+
       </View>
     </View>
   );
