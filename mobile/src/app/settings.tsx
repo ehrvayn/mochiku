@@ -17,6 +17,10 @@ import {
   useThemeColor,
 } from "../theme";
 import { useColorScheme } from "nativewind";
+import {
+  beginThemeToggleProbe,
+  endThemeToggleProbe,
+} from "../store/themeProbe";
 
 function parseHHMM(value: string | undefined) {
   const d = new Date();
@@ -68,8 +72,11 @@ export default function Settings() {
   };
 
   const handleDarkChange = (next: boolean) => {
+    // Diagnostic only: measures the re-render cascade for this toggle.
+    beginThemeToggleProbe(`settings -> ${next ? "dark" : "light"}`);
     setDark(next);
     storeAppearance(next ? "dark" : "light");
+    endThemeToggleProbe();
   };
 
   return (

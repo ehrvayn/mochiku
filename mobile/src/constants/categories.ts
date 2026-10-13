@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useColorScheme } from "nativewind";
 import { useMemo } from "react";
+import { countCategoryComputation, countSchemeRead } from "../store/themeProbe";
 
 export type IconName = React.ComponentProps<typeof Ionicons>["name"];
 
@@ -74,10 +75,12 @@ export const getCategory = (value: string | null | undefined): Category =>
   CATEGORIES[CATEGORIES.length - 1];
 
 export function useCategoryColors(): Record<string, CategoryColors> {
+  countSchemeRead();
   const { colorScheme } = useColorScheme();
   const dark = colorScheme === "dark";
 
   return useMemo(() => {
+    countCategoryComputation();
     const result: Record<string, CategoryColors> = {};
     for (const category of CATEGORIES) {
       result[category.label] = dark

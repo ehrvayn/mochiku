@@ -22,16 +22,31 @@ import {
 } from "../components/library/LibraryEmptyStates";
 import PhotoCard from "../components/item/PhotoCard";
 import { CATEGORIES, getCategory } from "../constants/categories";
-import { deleteItems, getAllItems } from "../db/items";
+import { deleteItems } from "../db/items";
+import {
+  LIBRARY_KEY,
+  refreshLibrary,
+  removeFromLibraryCache,
+  type LibraryData,
+} from "../store/appCache";
+import { useCacheEntry } from "../store/cache";
+import {
+  beginThemeToggleProbe,
+  endThemeToggleProbe,
+} from "../store/themeProbe";
 import { syncReminders } from "../services/notifications";
 import { processPendingUploads } from "../services/upload";
 import { useThemeColor } from "../theme";
 import { Item } from "../types/item";
 import { useColorScheme } from "nativewind";
+import LibrarySkeleton from "../components/library/LibrarySkeleton";
 
 /** Polling cadence while the Drafts tab is open, so finished uploads move
  *  from Drafts to Saved without a manual pull-to-refresh. */
 const DRAFTS_POLL_MS = 4000;
+
+/** Stable empty array so derived memos below do not churn. */
+const EMPTY_ITEMS: Item[] = [];
 
 export default function Library() {
   const insets = useSafeAreaInsets();
@@ -43,7 +58,8 @@ export default function Library() {
   const { width } = useWindowDimensions();
   const cardWidth = (width - 40 - 12) / 2;
 
-  const [items, setItems] = useState<Item[]>([]);
+  const { data: cachedItems, settled } = useCacheEntry<LibraryData>(LIBRARY_KEY);
+
   const [tab, setTab] = useState<LibraryTab>("saved");
   const [selected, setSelected] = useState("All");
   const [selecting, setSelecting] = useState(false);
@@ -51,7 +67,12 @@ export default function Library() {
   const [showDelete, setShowDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const load = useCallback(() => getAllItems().then(setItems), []);
+  // True only until the very first load settles; false immediately when the
+  // cache is already warm from a previous visit.
+  const isLoading = !settled;
+  const items = cachedItems ?? EMPTY_ITEMS;
+
+  const load = useCallback(() => refreshLibrary(), []);
 
   const exitSelection = useCallback(() => {
     setSelecting(false);
@@ -69,6 +90,8 @@ export default function Library() {
 
   useFocusEffect(
     useCallback(() => {
+      // Diagnostic: measure the cost of this screen's color subscriptions.
+      beginThemeToggleProbe(`library focus (${items.length} items)`);
       load();
       processPendingUploads().then((count) => {
         if (count > 0) load();
@@ -82,8 +105,12 @@ export default function Library() {
         return false;
       });
       return () => sub.remove();
-    }, [load, selecting, exitSelection]),
+    }, [load, selecting, exitSelection, items.length]),
   );
+
+  useEffect(() => {
+    endThemeToggleProbe();
+  }, [items.length]);
 
   // Keep retrying pending uploads while the Drafts tab is open. The interval
   // is torn down as soon as the tab changes, so it only ever runs on Drafts.
@@ -158,6 +185,8 @@ export default function Library() {
         queryClient.removeQueries({ queryKey: ["item", id] });
         queryClient.removeQueries({ queryKey: ["itemFields", id] });
       });
+      // Drop them from the cache now so a refocus cannot show deleted rows.
+      removeFromLibraryCache(ids);
       await load();
       exitSelection();
     } finally {
@@ -167,7 +196,16 @@ export default function Library() {
   };
 
   const onDrafts = tab === "drafts";
-  const totalCount = isDark ? saved.length + drafts.length : items.length;
+  const totalCount = items.length;
+
+  if (isLoading) {
+    return (
+      <>
+        <Stack.Screen options={{ headerShown: false }} />
+        <LibrarySkeleton isDark={isDark} />
+      </>
+    );
+  }
 
   const header = (
     <View
@@ -295,6 +333,8 @@ export default function Library() {
               />
             )
           }
+          // Never reached while loading: the skeleton short-circuits above,
+          // so an empty list here is always genuinely empty.
           renderItem={({ item }) =>
             onDrafts ? (
               <View style={{ width: cardWidth }}>

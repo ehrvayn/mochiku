@@ -20,6 +20,10 @@ import {
   updateItemStatus,
 } from "../../db/items";
 import { daysUntil } from "../../hooks/useHomeData";
+import {
+  removeFromLibraryCache,
+  resyncAfterStatusChange,
+} from "../../store/appCache";
 import { syncReminders } from "../../services/notifications";
 import { useThemeColor } from "../../theme";
 import { ItemField } from "../../types/item";
@@ -150,6 +154,9 @@ export default function Review() {
         queryClient.invalidateQueries({ queryKey: ["item", id] }),
         queryClient.invalidateQueries({ queryKey: ["itemFields", id] }),
       ]);
+      // Status just changed, so this item moves between Library's Saved and
+      // Drafts tabs and may enter Home's upcoming list.
+      resyncAfterStatusChange();
       await syncReminders();
       setIsEditing(false);
     } finally {
@@ -167,6 +174,7 @@ export default function Review() {
       router.back();
       queryClient.removeQueries({ queryKey: ["item", id] });
       queryClient.removeQueries({ queryKey: ["itemFields", id] });
+      removeFromLibraryCache([id]);
     } catch {
       setIsDeleting(false);
       setShowDelete(false);

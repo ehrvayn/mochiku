@@ -1,7 +1,12 @@
 import { useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
-import { getItemsByStatus, getUpcomingItems } from "../db/items";
 import { Item } from "../types/item";
+import {
+  HOME_KEY,
+  refreshHome,
+  type HomeData,
+} from "../store/appCache";
+import { useCacheEntry } from "../store/cache";
 
 export const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
@@ -13,20 +18,21 @@ export const daysUntil = (iso: string) =>
 
 export type DeadlineEntry = { item: Item; days: number };
 
+/** Stable empty arrays so the derived memo below does not churn. */
+const EMPTY: Item[] = [];
+
 export function useHomeData() {
-  const [pending, setPending] = useState<Item[]>([]);
-  const [upcoming, setUpcoming] = useState<Item[]>([]);
+  // Read the shared cache synchronously, so a remount renders the previous
+  // data on its very first frame instead of an empty state.
+  const { data, settled } = useCacheEntry<HomeData>(HOME_KEY);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
-    const [p, u] = await Promise.all([
-      getItemsByStatus("pending_review"),
-      getUpcomingItems(),
-    ]);
-    setPending(p.filter((i) => !i.deadline_at || new Date(i.deadline_at) >= new Date()));
-    setUpcoming(u.filter((i) => i.deadline_at));
+    await refreshHome();
   }, []);
 
+  // Focus always refetches, but it never resets the cache, so this refreshes
+  // silently in the background while the previous data stays on screen.
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   const refresh = async () => {
@@ -34,6 +40,9 @@ export function useHomeData() {
     await load();
     setRefreshing(false);
   };
+
+  const pending = data?.pending ?? EMPTY;
+  const upcoming = data?.upcoming ?? EMPTY;
 
   const derived = useMemo(() => {
     const entries: DeadlineEntry[] = upcoming.map((item) => ({
@@ -54,5 +63,17 @@ export function useHomeData() {
     };
   }, [upcoming]);
 
-  return { pending, upcoming, refreshing, refresh, ...derived };
+  /**
+ * `isLoading` is true only until the very first load settles. On a warm cache
+ * it is false from the first render, which is what keeps the empty state from
+ * flashing when navigating between screens.
+ */
+return {
+    pending,
+    upcoming,
+    refreshing,
+    refresh,
+    isLoading: !settled,
+    ...derived,
+  };
 }

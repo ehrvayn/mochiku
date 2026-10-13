@@ -13,6 +13,7 @@ import {
   SectionHeader,
 } from "../components/home/HomeParts";
 import { DeadlineEntry, useHomeData } from "../hooks/useHomeData";
+import HomeSkeleton from "../components/home/HomeSkeleton";
 import { useThemeColor } from "../theme";
 import { useColorScheme } from "nativewind";
 import { Ionicons } from "@expo/vector-icons";
@@ -32,7 +33,7 @@ function getStates(s: {
   const greet = (text: string): ReactNode =>
     s.name ? (
       <>
-        Hey <Text className="font-body-bold text-lg">{s.name}</Text>, {text}
+        Hey <Text className="font-body-bold text-base">{s.name}</Text>, {text}
       </>
     ) : (
       text.charAt(0).toUpperCase() + text.slice(1)
@@ -108,6 +109,7 @@ export default function Home() {
     weekCount,
     refreshing,
     refresh,
+    isLoading,
   } = useHomeData();
   const brand = useThemeColor("brand", "#FF8A4C");
 
@@ -157,6 +159,18 @@ export default function Home() {
 
   const activeState = states[currentIndex] ?? states[0];
   const isEmpty = !hero && pending.length === 0 && groups.length === 0;
+
+  // Show the skeleton only while the very first load is in flight. With a
+  // warm cache this is false on the first frame, so navigating back to Home
+  // renders real content immediately.
+  if (isLoading) {
+    return (
+      <>
+        <Stack.Screen options={{ headerShown: false }} />
+        <HomeSkeleton isDark={isDark} />
+      </>
+    );
+  }
 
   return (
     <View className="flex-1 bg-cream dark:bg-night">
@@ -241,7 +255,7 @@ export default function Home() {
           </View>
         )}
 
-        {isEmpty && (
+        {!isLoading && isEmpty && (
           <View
             className={`mx-5 my-8 p-6 rounded-3xl border border-line dark:border-line-dark items-center justify-center ${isDark ? "bg-paper-dark/60" : "bg-white/70"}`}
           >

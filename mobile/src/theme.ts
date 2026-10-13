@@ -1,5 +1,6 @@
 import Storage from "expo-sqlite/kv-store";
 import { colorScheme, useUnstableNativeVariable } from "nativewind";
+import { countNativeVariableRead } from "./store/themeProbe";
 
 export type AppearancePreference = "light" | "dark";
 
@@ -35,6 +36,7 @@ export function isDarkPreferred(): boolean {
 }
 
 export function useThemeColor(name: string, fallback: string): string {
+  countNativeVariableRead();
   const value: unknown = useUnstableNativeVariable(`--color-${name}`);
   if (Array.isArray(value)) {
     const parts = value.filter(

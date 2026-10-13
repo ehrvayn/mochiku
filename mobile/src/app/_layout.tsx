@@ -33,6 +33,7 @@ import {
   readStoredAppearance,
   useThemeColor,
 } from "../theme";
+import { refreshHome, refreshLibrary } from "../store/appCache";
 
 configureReanimatedLogger({
   level: ReanimatedLogLevel.warn,
@@ -96,6 +97,12 @@ export default function RootLayout() {
 
   useEffect(() => {
     syncReminders();
+
+    // Warm both list caches at startup, without blocking render. This is what
+    // lets the first Home -> Library navigation show real rows instead of a
+    // skeleton, since Library's cache is otherwise empty on its first visit.
+    void refreshHome();
+    void refreshLibrary();
 
     ensureLocalUser()
       .then((user) => {
