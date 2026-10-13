@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { ReactNode } from "react";
 import { Stack } from "expo-router";
 import {
@@ -10,6 +11,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { softShadow } from "../../constants/tones";
+import { useThemeColor } from "../../theme";
 import Mochiku, { Mood } from "../Mochiku";
 
 type OnboardingShellProps = {
@@ -22,6 +24,7 @@ type OnboardingShellProps = {
   onCta: () => void;
   ctaDisabled?: boolean;
   loading?: boolean;
+  onBack?: () => void;
 };
 
 export function OnboardingShell({
@@ -34,8 +37,10 @@ export function OnboardingShell({
   onCta,
   ctaDisabled = false,
   loading = false,
+  onBack,
 }: OnboardingShellProps) {
   const insets = useSafeAreaInsets();
+  const ink = useThemeColor("ink", "#2B2438");
 
   return (
     <View className="flex-1 bg-cream">
@@ -55,6 +60,21 @@ export function OnboardingShell({
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
+          {onBack && (
+            <View className="px-6 mb-4">
+              <TouchableOpacity
+                onPress={onBack}
+                activeOpacity={0.7}
+                hitSlop={12}
+                accessibilityRole="button"
+                accessibilityLabel="Go back"
+                className="w-10 h-10 rounded-full bg-paper border border-line items-center justify-center"
+              >
+                <Ionicons name="chevron-back" size={20} color={ink} />
+              </TouchableOpacity>
+            </View>
+          )}
+
           <View className="flex-row items-center px-6">
             <View className="items-center justify-center">
               <Mochiku mood={mood} height={124} width={116} />
@@ -75,7 +95,7 @@ export function OnboardingShell({
 
           <View className="flex-1 px-6">{children}</View>
 
-          <View className="flex-row items-center gap-1.5 mt-8 px-6">
+          <View className="flex-row items-center justify-center gap-1.5 mt-8 px-6">
             {Array.from({ length: total }).map((_, i) => (
               <View
                 key={i}

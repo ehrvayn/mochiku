@@ -4,7 +4,7 @@ import { router, Stack } from "expo-router";
 import Storage from "expo-sqlite/kv-store";
 import { useEffect, useRef, useState } from "react";
 import { savePhotoPermanently } from "../services/photos";
-import { uploadPhoto } from "../services/upload";
+import { getUploadMessage, uploadPhoto } from "../services/upload";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AllowAccess } from "../components/AllowAccess";
@@ -66,7 +66,13 @@ function Corner({ className }: { className: string }) {
   return <View className={`absolute w-9 h-9 border-brand ${className}`} />;
 }
 
-function StatusPopup({ status }: { status: ActiveStatus }) {
+function StatusPopup({
+  status,
+  message,
+}: {
+  status: ActiveStatus;
+  message: string;
+}) {
   const scale = useRef(new Animated.Value(0.85)).current;
   const opacity = useRef(new Animated.Value(0)).current;
   const brand = useThemeColor("brand", "#FF8A4C");
@@ -119,7 +125,7 @@ function StatusPopup({ status }: { status: ActiveStatus }) {
             <Ionicons name="alert-circle" size={20} color={soonInk} />
           )}
           <Text className="flex-shrink text-ink text-sm font-body-bold text-center">
-            {STATUS_COPY[status]}
+            {status === "error" && message ? message : STATUS_COPY[status]}
           </Text>
         </View>
       </Animated.View>
@@ -139,6 +145,7 @@ export default function CameraScreen() {
   const [facing, setFacing] = useState<CameraType>("back");
   const [flash, setFlash] = useState<FlashMode>("off");
   const [status, setStatus] = useState<Status>("idle");
+  const [errorText, setErrorText] = useState("");
   const [zoom, setZoom] = useState(0);
   const [cooling, setCooling] = useState(false);
   const zoomStart = useRef(0);
@@ -209,6 +216,7 @@ export default function CameraScreen() {
   const processPhoto = async (uri: string) => {
     const permanentUri = savePhotoPermanently(uri);
     const itemId = await insertItem(permanentUri);
+    setErrorText("");
     setStatus("processing");
 
     const retryHintTimer = setTimeout(() => {
@@ -219,6 +227,7 @@ export default function CameraScreen() {
       const result = await uploadPhoto(permanentUri);
 
       if (!result.ok) {
+        setErrorText("Couldn't read that photo");
         setStatus("error");
         return;
       }
@@ -226,7 +235,8 @@ export default function CameraScreen() {
       await saveExtractedData(itemId, result.extracted);
       await syncReminders();
       setStatus("done");
-    } catch {
+    } catch (error) {
+      setErrorText(getUploadMessage(error));
       setStatus("error");
     } finally {
       clearTimeout(retryHintTimer);
@@ -382,7 +392,9 @@ export default function CameraScreen() {
           </TouchableOpacity>
         </View>
 
-        {status !== "idle" && <StatusPopup status={status} />}
+        {status !== "idle" && (
+          <StatusPopup status={status} message={errorText} />
+        )}
       </View>
     </View>
   );

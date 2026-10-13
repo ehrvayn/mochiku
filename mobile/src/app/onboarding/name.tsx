@@ -36,6 +36,7 @@ export default function Name() {
         onCta={handleContinue}
         ctaDisabled={!canContinue}
         loading={saving}
+        onBack={() => router.back()}
       >
         <View className="mt-8">
           <TextInput

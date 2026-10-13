@@ -7,7 +7,7 @@ export default function Welcome() {
       step={0}
       total={4}
       mood="happy"
-      say="Hi! I'm Mochiku. Snap a photo of a bill, a receipt, or a notice and I'll read it and remind you before it's due."
+      say="Hi, I'm Mochiku! Snap anything you'll want later, like a bill, a flyer, or an assignment. I'll read it, keep it organized, and remind you if there's a due date."
       ctaLabel="Get started"
       onCta={() => router.push("/onboarding/name")}
     />
