@@ -16,6 +16,7 @@ import {
   storeAppearance,
   useThemeColor,
 } from "../theme";
+import { useColorScheme } from "nativewind";
 
 function parseHHMM(value: string | undefined) {
   const d = new Date();
@@ -39,6 +40,9 @@ export default function Settings() {
   const brandColor = useThemeColor("brand", "#FF8A4C");
   const brandInk = useThemeColor("brand-ink", "#C2531A");
   const lineColor = useThemeColor("line", "#F0E4CF");
+  const paper = useThemeColor("paper", "#FFFFFF");
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
 
   useEffect(() => {
     let cancelled = false;
@@ -69,15 +73,15 @@ export default function Settings() {
   };
 
   return (
-    <View className="flex-1 bg-cream">
+    <View className="flex-1 bg-cream dark:bg-night">
       <Stack.Screen options={{ headerShown: false }} />
 
       <View
-        className="mb-6 bg-brand rounded-b-[50px] px-5"
+        className="mb-6 rounded-b-[50px] px-5 bg-brand dark:bg-brand-deep"
         style={{ paddingTop: insets.top + 16, paddingBottom: 28 }}
       >
-        <Text className="text-3xl font-display text-brand-deep">Settings</Text>
-        <Text className="text-xs font-body-medium text-brand-deep/80">
+        <Text className="text-3xl font-display text-white">Settings</Text>
+        <Text className="text-xs font-body-medium text-white/80">
           How Mochiku should behave
         </Text>
       </View>
@@ -87,32 +91,32 @@ export default function Settings() {
         style={{ paddingBottom: insets.bottom + 128 }}
       >
         <View className="mb-6">
-          <Text className="text-xs font-body-bold text-brand-ink mb-2">
+          <Text className="text-xs font-body-bold text-brand-ink dark:text-brand mb-2">
             Dark mode
           </Text>
 
-          <View className="bg-paper rounded-2xl px-4 py-3.5 border border-line flex-row items-center justify-between">
-            <Text className="text-base font-body-medium text-ink">
+          <View className="bg-paper dark:bg-paper-dark rounded-2xl px-4 py-3.5 border border-line dark:border-line-dark flex-row items-center justify-between">
+            <Text className="text-base font-body-medium text-ink dark:text-ink-dark">
               {dark ? "On" : "Off"}
             </Text>
             <Switch
               value={dark}
               onValueChange={handleDarkChange}
               trackColor={{ false: lineColor, true: brandColor }}
-              thumbColor="#FFFFFF"
+              thumbColor={paper}
               ios_backgroundColor={lineColor}
             />
           </View>
         </View>
 
-        <Text className="text-xs font-body-bold text-brand-ink mb-2">
+        <Text className="text-xs font-body-bold text-brand-ink dark:text-brand mb-2">
           Reminder time
         </Text>
 
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={() => setShowPicker(true)}
-          className="bg-paper rounded-2xl px-4 py-3.5 border border-line flex-row items-center justify-between"
+          className="bg-paper dark:bg-paper-dark rounded-2xl px-4 py-3.5 border border-line dark:border-line-dark flex-row items-center justify-between"
         >
           {Platform.OS === "ios" ? (
             <DateTimePicker
@@ -123,7 +127,7 @@ export default function Settings() {
               style={{ alignSelf: "flex-start" }}
             />
           ) : (
-            <Text className="text-base font-body-medium text-ink">
+            <Text className="text-base font-body-medium text-ink dark:text-ink-dark">
               {time.toLocaleTimeString([], {
                 hour: "2-digit",
                 minute: "2-digit",
@@ -140,14 +144,14 @@ export default function Settings() {
         <TouchableOpacity
           onPress={handleSave}
           activeOpacity={0.85}
-          className="mt-4 w-full py-4 rounded-full bg-brand items-center"
+          className="mt-4 w-full py-4 rounded-full bg-brand dark:bg-brand-deep items-center"
         >
           <Text className="text-white font-heading text-base">
             {saved ? "Saved" : "Save"}
           </Text>
         </TouchableOpacity>
 
-        <Text className="text-xs font-body text-ink-faint mt-4">
+        <Text className="text-xs font-body text-ink-faint dark:text-ink-faint-dark mt-4">
           Mochiku nudges you on this time each day while something is still
           open.
         </Text>

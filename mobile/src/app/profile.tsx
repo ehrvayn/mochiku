@@ -7,9 +7,12 @@ import Mochiku from "../components/Mochiku";
 import { softShadow } from "../constants/tones";
 import { getUser } from "../db/user";
 import { useThemeColor } from "../theme";
+import { useColorScheme } from "nativewind";
 
 export default function Profile() {
   const insets = useSafeAreaInsets();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
   const inkFaint = useThemeColor("ink-faint", "#A39DB0");
   const [user, setUser] = useState<{
     name: string;
@@ -30,41 +33,46 @@ export default function Profile() {
   const firstName = user?.name?.split(" ")[0] || "Friend";
 
   return (
-    <View className="flex-1 bg-cream">
+    <View className="flex-1 bg-cream dark:bg-night">
       <Stack.Screen options={{ headerShown: false }} />
 
       <ScrollView
         className="flex-1"
         contentContainerStyle={{
-          paddingTop: insets.top + 16,
           paddingBottom: insets.bottom + 128,
         }}
         showsVerticalScrollIndicator={false}
       >
         <View
-          className="mb-6 bg-brand rounded-b-[50px] px-5 items-center gap-4"
-          style={{ paddingBottom: 28 }}
+          className={`mb-6 rounded-b-[50px] px-5 justify-center ${
+            isDark ? "bg-brand-deep" : "bg-brand"
+          }`}
+          style={{ paddingTop: insets.top + 16, paddingBottom: 28 }}
         >
-          <Mochiku mood="happy" height={140} width={132} />
+          <View className="flex-row items-center gap-4">
+            <View className="items-center justify-center">
+              <Mochiku mood="happy" height={124} width={116} />
+            </View>
 
-          <View
-            className="relative rounded-3xl p-4 bg-paper border border-line self-stretch"
-            style={softShadow}
-          >
-            <Text className="text-sm font-heading text-ink text-center leading-snug">
-              Hi, I&apos;m {firstName}. Mochiku keeps your shelf tidy.
-            </Text>
+            <View className="flex-1 justify-center">
+              <View
+                className="relative rounded-3xl p-4 bg-paper dark:bg-paper-dark border border-line dark:border-line-dark"
+                style={softShadow}
+              >
+                <Text className="text-sm font-heading text-ink dark:text-ink-dark leading-snug">
+                  Hi, <Text className="font-display">{firstName}.</Text> I'm
+                  Mochiku and I keep your shelf tidy.
+                </Text>
+                <View className="absolute -left-2 top-6 w-3 h-3 rotate-45 bg-paper dark:bg-paper-dark border-l border-b border-line dark:border-line-dark" />
+              </View>
+            </View>
           </View>
         </View>
 
         <View className="px-5">
-          <View className="bg-paper rounded-2xl border border-line overflow-hidden">
-            <Row
-              icon="person-outline"
-              label="Name"
-              value={user?.name || "—"}
-            />
-            <View className="h-px bg-line" />
+          <View className="bg-paper dark:bg-paper-dark rounded-2xl border border-line dark:border-line-dark overflow-hidden">
+            <Row icon="person-outline" label="Name" value={user?.name || "—"} />
+            <View className="h-px bg-line dark:bg-line-dark" />
             <Row
               icon="time-outline"
               label="Reminder time"
@@ -79,7 +87,7 @@ export default function Profile() {
               color={inkFaint}
               style={{ marginTop: 1 }}
             />
-            <Text className="text-xs font-body text-ink-faint flex-1">
+            <Text className="text-xs font-body text-ink-faint dark:text-ink-faint-dark flex-1">
               Everything Mochiku remembers stays on this device.
             </Text>
           </View>
@@ -104,9 +112,13 @@ function Row({
     <View className="flex-row items-center justify-between px-4 py-4">
       <View className="flex-row items-center gap-3">
         <Ionicons name={icon} size={18} color={brandInk} />
-        <Text className="text-sm font-body-medium text-ink-soft">{label}</Text>
+        <Text className="text-sm font-body-medium text-ink-soft dark:text-ink-soft-dark">
+          {label}
+        </Text>
       </View>
-      <Text className="text-sm font-body-bold text-ink">{value}</Text>
+      <Text className="text-sm font-body-bold text-ink dark:text-ink-dark">
+        {value}
+      </Text>
     </View>
   );
 }

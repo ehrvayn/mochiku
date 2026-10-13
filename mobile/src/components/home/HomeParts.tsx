@@ -23,7 +23,7 @@ function CategoryTag({ value }: { value: string | null }) {
   const category = getCategory(value);
   const c = categoryColors[category.label];
   return (
-    <View className="flex-row items-center w-auto gap-1.5 px-2.5 py-1 rounded-full bg-cream border border-line">
+    <View className="flex-row items-center w-auto gap-1.5 px-2.5 py-1 rounded-full bg-cream dark:bg-night border border-line dark:border-line-dark">
       <Ionicons name={category.icon} size={12} color={c.fg} />
       <Text className="text-[11px] font-body-bold" style={{ color: c.fg }}>
         {category.label}
@@ -45,11 +45,14 @@ export function MascotHeader({
         <Mochiku mood={mood} height={117} width={110} />
       </View>
       <View className="flex-1 justify-center">
-        <View className="relative rounded-3xl p-4 bg-paper border border-line shadow-sm" style={softShadow}>
-          <Text className="text-sm font-heading text-ink leading-snug">
+        <View
+          className="relative rounded-3xl p-4 bg-paper dark:bg-paper-dark border border-line dark:border-line-dark shadow-sm"
+          style={softShadow}
+        >
+          <Text className="text-sm font-heading text-ink dark:text-ink-dark leading-snug">
             {message}
           </Text>
-          <View className="absolute -left-2 top-6 w-3 h-3 rotate-45 bg-paper border-l border-b border-line" />
+          <View className="absolute -left-2 top-6 w-3 h-3 rotate-45 bg-paper dark:bg-paper-dark border-l border-b border-line dark:border-line-dark" />
         </View>
       </View>
     </View>
@@ -65,10 +68,12 @@ export function NextUpCard({ entry }: { entry: DeadlineEntry }) {
     <TouchableOpacity
       activeOpacity={0.9}
       onPress={() => openItem(item.id)}
-      className="flex-row bg-paper border border-line rounded-3xl overflow-hidden"
+      className="flex-row bg-paper dark:bg-paper-dark border border-line dark:border-line-dark rounded-3xl overflow-hidden"
       style={softShadow}
     >
-      <View className={`w-28 items-center justify-center py-5 px-3 ${tone.hero}`}>
+      <View
+        className={`w-28 items-center justify-center py-5 px-3 ${tone.hero}`}
+      >
         <Text
           className={`font-display ${tone.heroText} ${
             days > 1 ? "text-3xl" : "text-base"
@@ -85,14 +90,17 @@ export function NextUpCard({ entry }: { entry: DeadlineEntry }) {
       </View>
 
       <View className="flex-1 p-4 justify-center gap-2">
-        <Text className="text-[11px] font-body-bold text-ink-faint uppercase tracking-wider">
+        <Text className="text-[11px] font-body-bold text-ink-faint dark:text-ink-faint-dark uppercase tracking-wider">
           Next up
         </Text>
-        <Text className="text-base font-heading text-ink" numberOfLines={2}>
+        <Text
+          className="text-base font-heading text-ink dark:text-ink-dark"
+          numberOfLines={2}
+        >
           {item.title ?? "Untitled"}
         </Text>
         <View className="flex-row items-center justify-between pt-1">
-          <Text className="text-xs font-body-medium text-ink-soft">
+          <Text className="text-xs font-body-medium text-ink-soft dark:text-ink-soft-dark">
             {shortDate(item.deadline_at!)}
           </Text>
           <CategoryTag value={item.category} />
@@ -111,9 +119,11 @@ export function SectionHeader({
 }) {
   return (
     <View className="px-5 mb-3">
-      <Text className="text-lg font-heading text-ink">{title}</Text>
+      <Text className="text-lg font-heading text-ink dark:text-ink-dark">
+        {title}
+      </Text>
       {subtitle && (
-        <Text className="text-xs font-body-medium text-ink-faint mt-0.5">
+        <Text className="text-xs font-body-medium text-ink-faint dark:text-ink-faint-dark mt-0.5">
           {subtitle}
         </Text>
       )}
@@ -128,22 +138,30 @@ export function ReviewCard({ item }: { item: Item }) {
     <TouchableOpacity
       activeOpacity={0.85}
       onPress={() => openItem(item.id)}
-      className="w-72 flex-row items-center gap-3.5 bg-paper border border-line rounded-3xl p-3.5"
+      className="w-72 flex-row items-center gap-3.5 bg-paper dark:bg-paper-dark border border-line dark:border-line-dark rounded-3xl p-3.5"
       style={softShadow}
     >
       <Image
         source={{ uri: item.local_image_uri }}
-        className="w-16 h-16 rounded-2xl bg-cream border border-line"
+        className="w-16 h-16 rounded-2xl bg-cream dark:bg-night border border-line dark:border-line-dark"
         resizeMode="cover"
       />
       <View className="flex-1 gap-1.5">
-        <Text className="text-sm font-heading text-ink" numberOfLines={1}>
+        <Text
+          className="text-sm font-heading text-ink dark:text-ink-dark"
+          numberOfLines={1}
+        >
           {item.title ?? "Untitled"}
         </Text>
         <View className="flex-row items-center gap-1.5 bg-soon-soft px-2.5 py-1 rounded-full self-start">
           <View className="w-1.5 h-1.5 rounded-full bg-soon" />
-          <Text className="text-[11px] font-body-bold text-soon-ink" numberOfLines={1}>
-            {item.deadline_at ? `Check ${shortDate(item.deadline_at)}` : "Needs date"}
+          <Text
+            className="text-[11px] font-body-bold text-soon-ink"
+            numberOfLines={1}
+          >
+            {item.deadline_at
+              ? `Check ${shortDate(item.deadline_at)}`
+              : "Needs date"}
           </Text>
         </View>
       </View>
@@ -168,20 +186,23 @@ function DeadlineRow({
       activeOpacity={0.7}
       onPress={() => openItem(item.id)}
       className={`flex-row items-center gap-4 px-4 py-3.5 ${
-        first ? "" : "border-t border-line/60"
+        first ? "" : "border-t border-line/60 dark:border-line-dark/60"
       }`}
     >
-      <View className="w-11 items-center justify-center bg-cream/60 py-1.5 rounded-2xl border border-line/40">
-        <Text className="text-[10px] font-body-bold text-ink-faint uppercase">
+      <View className="w-11 items-center justify-center bg-cream/60 dark:bg-night/60 py-1.5 rounded-2xl border border-line/40 dark:border-line-dark/40">
+        <Text className="text-[10px] font-body-bold text-ink-faint dark:text-ink-faint-dark uppercase">
           {MONTHS[date.getMonth()]}
         </Text>
-        <Text className="text-lg font-display text-ink leading-tight">
+        <Text className="text-lg font-display text-ink dark:text-ink-dark leading-tight">
           {date.getDate()}
         </Text>
       </View>
 
       <View className="flex-1 flex-col items-start gap-1">
-        <Text className="text-sm font-heading text-ink" numberOfLines={1}>
+        <Text
+          className="text-sm font-heading text-ink dark:text-ink-dark"
+          numberOfLines={1}
+        >
           {item.title ?? "Untitled"}
         </Text>
         <CategoryTag value={item.category} />
@@ -205,13 +226,15 @@ export function DeadlineGroup({
     <View className="px-5 mb-5">
       <Text
         className={`text-xs font-body-bold mb-2 uppercase tracking-wider ${
-          title === "Overdue" ? "text-urgent-ink" : "text-ink-faint"
+          title === "Overdue"
+            ? "text-urgent-ink"
+            : "text-ink-faint dark:text-ink-faint-dark"
         }`}
       >
         {title}
       </Text>
       <View
-        className="bg-paper border border-line rounded-3xl overflow-hidden"
+        className="bg-paper dark:bg-paper-dark border border-line dark:border-line-dark rounded-3xl overflow-hidden"
         style={softShadow}
       >
         {items.map((e, i) => (

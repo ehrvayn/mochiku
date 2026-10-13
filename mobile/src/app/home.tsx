@@ -97,6 +97,7 @@ export default function Home() {
 
   const [name, setName] = useState("");
   const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
 
   useEffect(() => {
     let cancelled = false;
@@ -142,7 +143,7 @@ export default function Home() {
   const isEmpty = !hero && pending.length === 0 && groups.length === 0;
 
   return (
-    <View className="flex-1 bg-cream">
+    <View className="flex-1 bg-cream dark:bg-night">
       <Stack.Screen options={{ headerShown: false }} />
 
       <ScrollView
@@ -161,7 +162,7 @@ export default function Home() {
         showsVerticalScrollIndicator={false}
       >
         <View
-          className={`mb-6 pb-6 rounded-b-[50px] px-5 justify-center ${colorScheme === "dark" ? "bg-orange-900/60" : "bg-brand"}`}
+          className={`mb-6 pb-6 rounded-b-[50px] px-5 justify-center ${isDark ? "bg-brand-deep" : "bg-brand"}`}
           style={{ paddingTop: insets.top + 16, minHeight: insets.top + 140 }}
         >
           <Animated.View
@@ -183,7 +184,7 @@ export default function Home() {
                   className={`h-1.5 rounded-full transition-all ${
                     idx === currentIndex
                       ? "w-5 bg-brand border border-brand"
-                      : "w-1.5 bg-ink/10"
+                      : "w-1.5 bg-white/30"
                   }`}
                 />
               ))}
@@ -226,15 +227,15 @@ export default function Home() {
 
         {isEmpty && (
           <View
-            className={`mx-5 my-8 p-6 rounded-3xl border border-line items-center justify-center ${colorScheme === "dark" ? "bg-gray-800/40" : "bg-white/70"}`}
+            className={`mx-5 my-8 p-6 rounded-3xl border border-line dark:border-line-dark items-center justify-center ${isDark ? "bg-paper-dark/60" : "bg-white/70"}`}
           >
             <View className="w-12 h-12 rounded-full bg-brand-soft justify-center items-center mb-3">
               <Text className="text-xl">💤</Text>
             </View>
-            <Text className="text-base font-heading text-ink text-center mb-1">
+            <Text className="text-base font-heading text-ink dark:text-ink-dark text-center mb-1">
               Your Shelf is Empty
             </Text>
-            <Text className="text-xs font-body-medium text-ink-faint text-center max-w-[240px]">
+            <Text className="text-xs font-body-medium text-ink-faint dark:text-ink-faint-dark text-center max-w-[240px]">
               Deadlines from your scanned photos will show up here
               automatically.
             </Text>

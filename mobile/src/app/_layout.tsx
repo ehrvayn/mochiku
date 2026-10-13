@@ -27,8 +27,12 @@ import {
   ReanimatedLogLevel,
 } from "react-native-reanimated";
 import { StatusBar } from "expo-status-bar";
-import { useColorScheme } from "nativewind";
-import { applyStoredAppearance, useThemeColor } from "../theme";
+import { colorScheme as nativeColorScheme, useColorScheme } from "nativewind";
+import {
+  applyStoredAppearance,
+  readStoredAppearance,
+  useThemeColor,
+} from "../theme";
 
 configureReanimatedLogger({
   level: ReanimatedLogLevel.warn,
@@ -44,6 +48,7 @@ const introVideoSource = require("../../assets/vid/Mochiku-intro.mp4");
 export default function RootLayout() {
   const { colorScheme } = useColorScheme();
   const cream = useThemeColor("cream", "#FFF8EC");
+  const brand = useThemeColor("brand", "#FF8A4C");
   const [loaded] = useFonts({
     Nunito_700Bold,
     Nunito_800ExtraBold,
@@ -56,6 +61,14 @@ export default function RootLayout() {
   const [needsOnboarding, setNeedsOnboarding] = useState<boolean | null>(null);
   const segments = useSegments();
   const inOnboarding = segments[0] === "onboarding";
+
+  // The intro splash and the whole onboarding flow are always rendered in
+  // light, regardless of the stored preference. Once the user is past
+  // onboarding, restore whatever they picked in Settings.
+  const lightLocked = showIntro || inOnboarding;
+  useEffect(() => {
+    nativeColorScheme.set(lightLocked ? "light" : readStoredAppearance());
+  }, [lightLocked]);
 
   const opacity = useSharedValue(1);
 
@@ -116,7 +129,7 @@ export default function RootLayout() {
 
   if (showIntro) {
     return (
-      <View style={styles.introContainer}>
+      <View style={[styles.introContainer, { backgroundColor: brand }]}>
         <Animated.View style={[styles.introContent, animatedStyle]}>
           <VideoView
             player={player}
@@ -157,7 +170,6 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   introContainer: {
     flex: 1,
-    backgroundColor: "#FF8A4C",
     alignItems: "center",
     justifyContent: "center",
   },

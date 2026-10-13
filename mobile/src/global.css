@@ -27,23 +27,32 @@
   }
 
   .dark:root {
-    --color-cream: 27 22 32;
-    --color-paper: 38 31 45;
-    --color-line: 58 50 67;
-    --color-ink: 244 234 219;
-    --color-ink-soft: 184 174 196;
-    --color-ink-faint: 127 118 144;
-    --color-brand: 255 138 76;
-    --color-brand-soft: 59 42 42;
-    --color-brand-ink: 255 168 119;
-    --color-urgent: 255 107 99;
-    --color-urgent-soft: 62 37 39;
-    --color-urgent-ink: 255 154 148;
-    --color-soon: 255 192 77;
-    --color-soon-soft: 58 48 32;
-    --color-soon-ink: 255 207 110;
-    --color-calm: 111 214 180;
-    --color-calm-soft: 30 58 51;
-    --color-calm-ink: 134 224 194;
+    /* surfaces stay warm plum-brown, never neutral gray */
+    --color-cream: 26 21 31;
+    --color-paper: 37 30 44;
+    --color-line: 57 48 66;
+    --color-night: 12 11 15;
+
+    /* text: warm off-white, desaturated as it recedes */
+    --color-ink: 245 235 222;
+    --color-ink-soft: 186 175 194;
+    --color-ink-faint: 133 123 148;
+
+    /* brand: same hue as light mode, lifted for dark backgrounds */
+    --color-brand: 255 143 84;
+    --color-brand-soft: 62 40 36;
+    --color-brand-ink: 255 172 124;
+    --color-brand-deep: 122 47 12;
+
+    /* urgency: saturated, kept readable against dark surfaces */
+    --color-urgent: 255 112 104;
+    --color-urgent-soft: 66 34 36;
+    --color-urgent-ink: 255 160 154;
+    --color-soon: 255 196 84;
+    --color-soon-soft: 60 47 29;
+    --color-soon-ink: 255 212 122;
+    --color-calm: 116 219 185;
+    --color-calm-soft: 27 56 49;
+    --color-calm-ink: 139 228 199;
   }
 }

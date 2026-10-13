@@ -31,6 +31,7 @@ import {
   registerForNotificationsAsync,
   syncReminders,
 } from "../services/notifications";
+import { useThemeColor } from "../theme";
 
 type Status = "idle" | "processing" | "retrying" | "done" | "error";
 type ActiveStatus = Exclude<Status, "idle">;
@@ -68,6 +69,9 @@ function Corner({ className }: { className: string }) {
 function StatusPopup({ status }: { status: ActiveStatus }) {
   const scale = useRef(new Animated.Value(0.85)).current;
   const opacity = useRef(new Animated.Value(0)).current;
+  const brand = useThemeColor("brand", "#FF8A4C");
+  const calmInk = useThemeColor("calm-ink", "#1F8A6B");
+  const soonInk = useThemeColor("soon-ink", "#9A6400");
 
   useEffect(() => {
     Animated.parallel([
@@ -107,12 +111,12 @@ function StatusPopup({ status }: { status: ActiveStatus }) {
         <Mochiku mood={STATUS_MOOD[status]} height={200} width={140} />
 
         <View className="flex-row items-center gap-2 bg-paper rounded-3xl px-5 py-3 max-w-[300px]">
-          {busy && <ActivityIndicator size="small" color="#FF8A4C" />}
+          {busy && <ActivityIndicator size="small" color={brand} />}
           {status === "done" && (
-            <Ionicons name="checkmark-circle" size={20} color="#1F8A6B" />
+            <Ionicons name="checkmark-circle" size={20} color={calmInk} />
           )}
           {status === "error" && (
-            <Ionicons name="alert-circle" size={20} color="#9A6400" />
+            <Ionicons name="alert-circle" size={20} color={soonInk} />
           )}
           <Text className="flex-shrink text-ink text-sm font-body-bold text-center">
             {STATUS_COPY[status]}
@@ -125,6 +129,7 @@ function StatusPopup({ status }: { status: ActiveStatus }) {
 
 export default function CameraScreen() {
   const insets = useSafeAreaInsets();
+  const brandTint = useThemeColor("brand", "#FF8A4C");
   const [permission, requestPermission, getPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
   const [notifStatus, setNotifStatus] = useState<NotifStatus | null>(null);
@@ -364,7 +369,7 @@ export default function CameraScreen() {
                 locked ? "bg-white/60" : "bg-white"
               }`}
             >
-              {busy && <ActivityIndicator color="#FF8A4C" />}
+              {busy && <ActivityIndicator color={brandTint} />}
             </View>
           </TouchableOpacity>
 

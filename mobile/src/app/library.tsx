@@ -15,15 +15,22 @@ import DeleteItemModal from "../components/modal/DeleteItemModal";
 import DraftStrip from "../components/DraftStrip";
 import Mochiku from "../components/Mochiku";
 import PhotoCard from "../components/item/PhotoCard";
-import { CATEGORIES, getCategory, useCategoryColors } from "../constants/categories";
+import {
+  CATEGORIES,
+  getCategory,
+  useCategoryColors,
+} from "../constants/categories";
 import { deleteItems, getAllItems } from "../db/items";
 import { syncReminders } from "../services/notifications";
 import { processPendingUploads } from "../services/upload";
 import { useThemeColor } from "../theme";
 import { Item } from "../types/item";
+import { useColorScheme } from "nativewind";
 
 export default function Library() {
   const insets = useSafeAreaInsets();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
   const queryClient = useQueryClient();
   const categoryColors = useCategoryColors();
   const ink = useThemeColor("ink", "#2B2438");
@@ -141,9 +148,11 @@ export default function Library() {
     <>
       <Stack.Screen options={{ headerShown: false }} />
 
-      <View className="flex-1 bg-cream">
+      <View className="flex-1 bg-cream dark:bg-night">
         <View
-          className="bg-brand rounded-b-[50px] px-5 pb-4"
+          className={`rounded-b-[50px] px-5 pb-4 ${
+            isDark ? "bg-brand-deep" : "bg-brand"
+          }`}
           style={{ paddingTop: insets.top + 16 }}
         >
           <View className="flex-row items-center justify-between mb-1">
@@ -152,24 +161,24 @@ export default function Library() {
                 <TouchableOpacity
                   activeOpacity={0.7}
                   onPress={exitSelection}
-                  className="w-10 h-10 rounded-full bg-paper border border-line items-center justify-center"
+                  className="w-10 h-10 rounded-full bg-paper dark:bg-paper-dark border border-line dark:border-line-dark items-center justify-center"
                 >
                   <Ionicons name="close" size={20} color={ink} />
                 </TouchableOpacity>
-                <Text className="text-xl font-heading text-brand-deep">
+                <Text className="text-xl font-heading text-white">
                   {picked.size} selected
                 </Text>
               </View>
             ) : (
               <View className="flex-row items-center gap-1">
                 {items.length !== 0 && (
-                  <Mochiku mood={"idle"} height={60} width={60} />
+                  <Mochiku mood={"idle"} height={50} width={50} />
                 )}
-                <View>
-                  <Text className="text-3xl font-display text-brand-deep">
+                <View className={`${items.length === 0 && "pl-5"}`}>
+                  <Text className="text-3xl font-display text-white">
                     Library
                   </Text>
-                  <Text className="text-xs font-body-medium text-brand-deep">
+                  <Text className="text-xs font-body-medium text-white/80">
                     {items.length === 0
                       ? "Nothing stored yet"
                       : `${items.length} ${items.length === 1 ? "thing" : "things"} remembered`}
@@ -183,9 +192,9 @@ export default function Library() {
                 <TouchableOpacity
                   activeOpacity={0.7}
                   onPress={toggleAll}
-                  className="h-10 px-4 rounded-full bg-paper border border-line items-center justify-center"
+                  className="h-10 px-4 rounded-full bg-paper dark:bg-paper-dark border border-line dark:border-line-dark items-center justify-center"
                 >
-                  <Text className="text-sm font-body-bold text-brand-ink">
+                  <Text className="text-sm font-body-bold text-brand-ink dark:text-brand">
                     {allPicked ? "Clear" : "Select all"}
                   </Text>
                 </TouchableOpacity>
@@ -205,14 +214,14 @@ export default function Library() {
                 <TouchableOpacity
                   activeOpacity={0.7}
                   onPress={() => setSelecting(true)}
-                  className="h-9 px-3.5 flex-row items-center gap-1 rounded-full bg-paper border border-line"
+                  className="h-9 px-3.5 flex-row items-center gap-1 rounded-full bg-paper dark:bg-paper-dark border border-line dark:border-line-dark"
                 >
                   <Ionicons
                     name="checkmark-circle-outline"
                     size={15}
                     color={brandInk}
                   />
-                  <Text className="text-xs font-body-bold text-brand-ink">
+                  <Text className="text-xs font-body-bold text-brand-ink dark:text-brand">
                     Select
                   </Text>
                 </TouchableOpacity>
@@ -239,9 +248,7 @@ export default function Library() {
                   activeOpacity={0.7}
                   onPress={() => setSelected(label)}
                   style={{
-                    backgroundColor: active
-                      ? (cat?.bg ?? ink)
-                      : "transparent",
+                    backgroundColor: active ? (cat?.bg ?? ink) : "transparent",
                     borderColor: active ? (cat?.fg ?? ink) : line,
                   }}
                   className="flex-row items-center gap-1.5 px-3.5 h-9 rounded-full border mr-2 mb-2"
@@ -283,12 +290,12 @@ export default function Library() {
           ListEmptyComponent={
             <View className="items-center gap-3 pt-16 px-10">
               <Mochiku mood="sleeping" height={200} width={200} />
-              <Text className="text-base font-heading text-ink-soft text-center mt-2">
+              <Text className="text-base font-heading text-ink-soft dark:text-ink-soft-dark text-center mt-2">
                 {items.length === 0
                   ? "Nothing to remember yet"
                   : `Nothing in ${selected.toLowerCase()} yet`}
               </Text>
-              <Text className="text-sm font-body-medium text-ink-faint text-center">
+              <Text className="text-sm font-body-medium text-ink-faint dark:text-ink-faint-dark text-center">
                 {items.length === 0 &&
                   "Snap a bill, a flyer, anything, Mochiku will hold onto it for you"}
               </Text>

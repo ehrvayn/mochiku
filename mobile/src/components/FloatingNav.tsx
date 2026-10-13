@@ -9,19 +9,20 @@ import { useColorScheme } from "nativewind";
 
 const VISIBLE_ON = ["/home", "/library", "/profile", "/settings"];
 
-const IDLE = "rgba(255, 248, 236, 0.55)";
-const ACTIVE = "#FFF8EC";
-
 function NavItem({
   active,
   activeIcon,
   idleIcon,
   onPress,
+  activeColor,
+  idleColor,
 }: {
   active: boolean;
   activeIcon: keyof typeof Ionicons.glyphMap;
   idleIcon: keyof typeof Ionicons.glyphMap;
   onPress: () => void;
+  activeColor: string;
+  idleColor: string;
 }) {
   return (
     <TouchableOpacity
@@ -34,7 +35,7 @@ function NavItem({
       <Ionicons
         name={active ? activeIcon : idleIcon}
         size={22}
-        color={active ? ACTIVE : IDLE}
+        color={active ? activeColor : idleColor}
       />
     </TouchableOpacity>
   );
@@ -44,7 +45,11 @@ export default function FloatingNav() {
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
   const brandInk = useThemeColor("brand-ink", "#C2531A");
+  const cream = useThemeColor("cream", "#FFF8EC");
   const { colorScheme } = useColorScheme();
+
+  const navActive = cream;
+  const navIdle = colorScheme === "dark" ? "rgba(245, 235, 222, 0.55)" : "rgba(255, 248, 236, 0.55)";
 
   if (!VISIBLE_ON.includes(pathname)) return null;
 
@@ -54,7 +59,7 @@ export default function FloatingNav() {
       style={{ bottom: insets.bottom + 12, height: 88 }}
       className="absolute left-5 right-5"
     >
-      <View className={`absolute bottom-0 left-2 right-2 h-16 rounded-full border-brand-dark/20 ${colorScheme === "dark" ? "bg-orange-900/60" : "bg-brand"}`} />
+      <View className={`absolute bottom-0 left-2 right-2 h-16 rounded-full border border-brand-deep/20 ${colorScheme === "dark" ? "bg-brand-deep" : "bg-brand"}`} />
 
       <View
         pointerEvents="box-none"
@@ -65,12 +70,16 @@ export default function FloatingNav() {
             active={pathname === "/home"}
             activeIcon="home"
             idleIcon="home-outline"
+            activeColor={navActive}
+            idleColor={navIdle}
             onPress={() => pathname !== "/home" && router.navigate("/home")}
           />
           <NavItem
             active={pathname === "/library"}
             activeIcon="albums"
             idleIcon="albums-outline"
+            activeColor={navActive}
+            idleColor={navIdle}
             onPress={() =>
               pathname !== "/library" && router.navigate("/library")
             }
@@ -91,6 +100,8 @@ export default function FloatingNav() {
             active={pathname === "/profile"}
             activeIcon="person"
             idleIcon="person-outline"
+            activeColor={navActive}
+            idleColor={navIdle}
             onPress={() =>
               pathname !== "/profile" && router.navigate("/profile")
             }
@@ -99,6 +110,8 @@ export default function FloatingNav() {
             active={pathname === "/settings"}
             activeIcon="settings"
             idleIcon="settings-outline"
+            activeColor={navActive}
+            idleColor={navIdle}
             onPress={() =>
               pathname !== "/settings" && router.navigate("/settings")
             }

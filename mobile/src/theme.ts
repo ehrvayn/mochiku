@@ -5,17 +5,24 @@ export type AppearancePreference = "light" | "dark";
 
 const STORAGE_KEY = "appearance";
 
-export function readStoredAppearance(): AppearancePreference | null {
+/**
+ * Appearance is fully app-owned: it is only ever driven by the toggle in
+ * Settings, never by the OS. There is deliberately no "system" option, and
+ * NativeWind is never allowed to track the device appearance.
+ */
+const DEFAULT_APPEARANCE: AppearancePreference = "light";
+
+export function readStoredAppearance(): AppearancePreference {
   try {
     const value = Storage.getItemSync(STORAGE_KEY);
-    return value === "light" || value === "dark" ? value : null;
+    return value === "dark" ? "dark" : DEFAULT_APPEARANCE;
   } catch {
-    return null;
+    return DEFAULT_APPEARANCE;
   }
 }
 
 export function applyStoredAppearance() {
-  colorScheme.set(readStoredAppearance() ?? "light");
+  colorScheme.set(readStoredAppearance());
 }
 
 export function storeAppearance(value: AppearancePreference) {
