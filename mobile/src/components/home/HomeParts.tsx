@@ -7,6 +7,7 @@ import { DeadlineEntry, MONTHS } from "../../hooks/useHomeData";
 import { useThemeColor } from "../../theme";
 import { Item } from "../../types/item";
 import Mochiku, { Mood } from "../Mochiku";
+import { ReactNode } from "react";
 
 const openItem = (id: string) =>
   router.push({ pathname: "/item/[id]", params: { id } });
@@ -36,7 +37,7 @@ export function MascotHeader({
   message,
   mood,
 }: {
-  message: string;
+  message: ReactNode;
   mood: Mood;
 }) {
   return (

@@ -10,6 +10,7 @@ export default function PhotoCard({
   isPicked,
   onPress,
   onLongPress,
+  isOnDrafts,
 }: {
   item: Item;
   isPicked: boolean;
@@ -17,6 +18,7 @@ export default function PhotoCard({
   tall?: boolean;
   onPress: () => void;
   onLongPress: () => void;
+  isOnDrafts?: boolean;
 }) {
   const categoryColors = useCategoryColors();
   const category = getCategory(item.category);
@@ -60,23 +62,25 @@ export default function PhotoCard({
         )}
       </View>
 
-      <View className="p-3 gap-1.5">
-        <Text className="text-sm font-heading text-ink" numberOfLines={2}>
-          {item.title ?? "Untitled"}
-        </Text>
-        <View
-          className="flex-row items-center gap-1 rounded-full px-2 py-0.5 self-start"
-          style={{ backgroundColor: cat.bg }}
-        >
-          <Ionicons name={category.icon} size={11} color={cat.fg} />
-          <Text
-            className="text-[11px] font-body-bold"
-            style={{ color: cat.fg }}
-          >
-            {category.label}
+      {!isOnDrafts && (
+        <View className="p-3 gap-1.5">
+          <Text className="text-sm font-heading text-ink" numberOfLines={2}>
+            {item.title ?? "Untitled"}
           </Text>
+          <View
+            className="flex-row items-center gap-1 rounded-full px-2 py-0.5 self-start"
+            style={{ backgroundColor: cat.bg }}
+          >
+            <Ionicons name={category.icon} size={11} color={cat.fg} />
+            <Text
+              className="text-[11px] font-body-bold"
+              style={{ color: cat.fg }}
+            >
+              {category.label}
+            </Text>
+          </View>
         </View>
-      </View>
+      )}
     </TouchableOpacity>
   );
 }

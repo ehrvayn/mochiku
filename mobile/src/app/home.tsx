@@ -15,8 +15,10 @@ import {
 import { DeadlineEntry, useHomeData } from "../hooks/useHomeData";
 import { useThemeColor } from "../theme";
 import { useColorScheme } from "nativewind";
+import { Ionicons } from "@expo/vector-icons";
+import { ReactNode } from "react";
 
-type StatusItem = { id: string; message: string; mood: Mood };
+type StatusItem = { id: string; message: ReactNode; mood: Mood };
 
 function getStates(s: {
   hero: DeadlineEntry | null;
@@ -26,7 +28,15 @@ function getStates(s: {
   name?: string;
 }): StatusItem[] {
   const states: StatusItem[] = [];
-  const hi = s.name ? `Hey ${s.name}, ` : "";
+
+  const greet = (text: string): ReactNode =>
+    s.name ? (
+      <>
+        Hey <Text className="font-body-bold text-lg">{s.name}</Text>, {text}
+      </>
+    ) : (
+      text.charAt(0).toUpperCase() + text.slice(1)
+    );
 
   if (s.hero && s.hero.days <= 1) {
     states.push({
@@ -58,7 +68,9 @@ function getStates(s: {
   if (s.weekCount > 0) {
     states.push({
       id: "week",
-      message: `${hi}looking solid! ${s.weekCount} item${s.weekCount === 1 ? "" : "s"} scheduled for this week.`,
+      message: greet(
+        `looking solid! ${s.weekCount} item${s.weekCount === 1 ? "" : "s"} scheduled for this week.`,
+      ),
       mood: "happy",
     });
   }
@@ -67,13 +79,17 @@ function getStates(s: {
     if (s.hero) {
       states.push({
         id: "hero-idle",
-        message: `${hi}smooth sailing! Nothing urgent until ${s.hero.days} days from now.`,
+        message: greet(
+          `smooth sailing! Nothing urgent until ${s.hero.days} days from now.`,
+        ),
         mood: "happy",
       });
     } else {
       states.push({
         id: "empty",
-        message: `${hi}your shelf is totally clear. Snap a photo to catch dates!`,
+        message: greet(
+          "no deadlines coming up. Snap a photo and I'll catch the dates!",
+        ),
         mood: "sleeping",
       });
     }
@@ -230,14 +246,14 @@ export default function Home() {
             className={`mx-5 my-8 p-6 rounded-3xl border border-line dark:border-line-dark items-center justify-center ${isDark ? "bg-paper-dark/60" : "bg-white/70"}`}
           >
             <View className="w-12 h-12 rounded-full bg-brand-soft justify-center items-center mb-3">
-              <Text className="text-xl">💤</Text>
+              <Ionicons name="calendar-clear-outline" size={22} color={brand} />
             </View>
             <Text className="text-base font-heading text-ink dark:text-ink-dark text-center mb-1">
-              Your Shelf is Empty
+              No deadlines yet
             </Text>
             <Text className="text-xs font-body-medium text-ink-faint dark:text-ink-faint-dark text-center max-w-[240px]">
-              Deadlines from your scanned photos will show up here
-              automatically.
+              Anything you scan that has a due date will show up here. Your
+              other saved items are in the Library.
             </Text>
           </View>
         )}
