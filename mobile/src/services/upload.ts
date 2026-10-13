@@ -2,7 +2,7 @@ import { File } from "expo-file-system";
 import { getItemById, saveExtractedData, getItemsByStatus } from "../db/items";
 import { syncReminders } from "./notifications";
 
-const API_URL = "http://192.168.1.127:3000";
+const API_URL = "http://192.168.1.12:3000";
 const UPLOAD_TIMEOUT_MS = 20000;
 
 export type UploadErrorCode =

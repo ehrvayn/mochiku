@@ -1,26 +1,10 @@
 import { useCallback, useSyncExternalStore } from "react";
 
-/**
- * A tiny external store for async list data.
- *
- * The goal is to remove the "empty state flashes before data arrives" problem
- * without a full react-query migration. Screens read the cache synchronously,
- * so the very first render already has the previous data; a focus-driven
- * refresh then replaces it in the background.
- *
- * This deliberately holds no business logic and never touches the database
- * layer - loaders live alongside their screens.
- */
-
 type Listener = () => void;
 
 type Entry = {
-  /** Last known good data. Null until the first successful load. */
   data: unknown;
-  /** True once a load has settled, whether it succeeded or failed. */
   settled: boolean;
-  /** True if the last load failed. Kept separate so callers can distinguish
-   *  "loaded and genuinely empty" from "we could not reach the data". */
   failed: boolean;
 };
 
@@ -40,7 +24,6 @@ function notify(key: string) {
   listeners.get(key)?.forEach((listener) => listener());
 }
 
-/** Read without subscribing. Safe to call during render for plain values. */
 export function getData<T>(key: string): T | null {
   const entry = entries.get(key);
   return entry?.settled ? (entry.data as T) : null;
@@ -55,10 +38,6 @@ export function setData<T>(key: string, data: T) {
   notify(key);
 }
 
-/**
- * Patch cached data in place. Used after a delete so the cache stays correct
- * immediately and the UI never shows a removed item again.
- */
 export function updateData<T>(key: string, updater: (previous: T) => T) {
   const entry = entryFor(key);
   if (!entry.settled || entry.data === null) return;
@@ -66,16 +45,11 @@ export function updateData<T>(key: string, updater: (previous: T) => T) {
   notify(key);
 }
 
-/** Drop a single entry. Next render shows the skeleton again. */
 export function invalidate(key: string) {
   entries.delete(key);
   notify(key);
 }
 
-/**
- * Drop everything. Call on anything that replaces the whole dataset, such as
- * a future logout or "reset all data".
- */
 export function resetAll() {
   const keys = new Set([...entries.keys(), ...listeners.keys()]);
   entries.clear();
@@ -94,12 +68,6 @@ function subscribe(key: string, listener: Listener) {
   };
 }
 
-/**
- * Run a loader and fold the result into the cache.
- *
- * `settled` flips on both success and failure, so a failing first load shows
- * the empty state rather than an endless skeleton.
- */
 export async function loadInto<T>(
   key: string,
   loader: () => Promise<T>,
@@ -110,8 +78,6 @@ export async function loadInto<T>(
     return data;
   } catch {
     const previous = entries.get(key);
-    // Keep any previously loaded data; only mark the attempt as settled so
-    // the skeleton stops even if we have nothing to show yet.
     entries.set(key, {
       data: previous?.data ?? null,
       settled: true,
@@ -122,12 +88,6 @@ export async function loadInto<T>(
   }
 }
 
-/**
- * Subscribe a component to one cache key.
- *
- * `data` is whatever was last loaded, so a remount renders real content
- * immediately instead of an empty state.
- */
 export function useCacheEntry<T>(key: string): {
   data: T | null;
   settled: boolean;

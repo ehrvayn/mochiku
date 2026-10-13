@@ -5,12 +5,6 @@ import { countNativeVariableRead } from "./store/themeProbe";
 export type AppearancePreference = "light" | "dark";
 
 const STORAGE_KEY = "appearance";
-
-/**
- * Appearance is fully app-owned: it is only ever driven by the toggle in
- * Settings, never by the OS. There is deliberately no "system" option, and
- * NativeWind is never allowed to track the device appearance.
- */
 const DEFAULT_APPEARANCE: AppearancePreference = "light";
 
 export function readStoredAppearance(): AppearancePreference {

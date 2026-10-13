@@ -17,7 +17,7 @@ const STYLES = {
     bar: "bg-urgent",
     hero: "bg-urgent",
     heroText: "text-white",
-    heroSub: "text-white/80",
+    heroSub: "text-white",
   },
   soon: {
     key: "soon",
@@ -26,16 +26,16 @@ const STYLES = {
     bar: "bg-soon",
     hero: "bg-soon",
     heroText: "text-ink",
-    heroSub: "text-ink/70",
+    heroSub: "text-ink",
   },
   calm: {
     key: "calm",
     box: "bg-calm-soft",
-    text: "text-calm-ink",
+    text: "text-ink",
     bar: "bg-calm",
     hero: "bg-calm",
     heroText: "text-ink",
-    heroSub: "text-ink/70",
+    heroSub: "text-ink",
   },
 } as const;
 
