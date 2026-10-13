@@ -161,7 +161,7 @@ export default function Home() {
         showsVerticalScrollIndicator={false}
       >
         <View
-          className={`mb-6 pb-6 rounded-b-[50px] px-5 justify-center ${colorScheme === "dark" ? "bg-white" : "bg-brand"}`}
+          className={`mb-6 pb-6 rounded-b-[50px] px-5 justify-center ${colorScheme === "dark" ? "bg-orange-900/60" : "bg-brand"}`}
           style={{ paddingTop: insets.top + 16, minHeight: insets.top + 140 }}
         >
           <Animated.View
@@ -225,7 +225,9 @@ export default function Home() {
         )}
 
         {isEmpty && (
-          <View className="mx-5 my-8 p-6 rounded-3xl bg-white/70 border border-line items-center justify-center">
+          <View
+            className={`mx-5 my-8 p-6 rounded-3xl border border-line items-center justify-center ${colorScheme === "dark" ? "bg-gray-800/40" : "bg-white/70"}`}
+          >
             <View className="w-12 h-12 rounded-full bg-brand-soft justify-center items-center mb-3">
               <Text className="text-xl">💤</Text>
             </View>

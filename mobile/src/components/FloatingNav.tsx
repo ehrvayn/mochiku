@@ -4,6 +4,8 @@ import { TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { softShadow } from "../constants/tones";
 import { useThemeColor } from "../theme";
+import { useColorScheme } from "nativewind";
+
 
 const VISIBLE_ON = ["/home", "/library", "/profile", "/settings"];
 
@@ -42,6 +44,7 @@ export default function FloatingNav() {
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
   const brandInk = useThemeColor("brand-ink", "#C2531A");
+  const { colorScheme } = useColorScheme();
 
   if (!VISIBLE_ON.includes(pathname)) return null;
 
@@ -51,13 +54,12 @@ export default function FloatingNav() {
       style={{ bottom: insets.bottom + 12, height: 88 }}
       className="absolute left-5 right-5"
     >
-      <View className="absolute bottom-0 left-2 right-2 h-16 bg-brand rounded-full border-brand-dark/20" />
+      <View className={`absolute bottom-0 left-2 right-2 h-16 rounded-full border-brand-dark/20 ${colorScheme === "dark" ? "bg-orange-900/60" : "bg-brand"}`} />
 
       <View
         pointerEvents="box-none"
         className="absolute inset-0 flex-row items-end justify-between px-8"
       >
-
         <View className="flex-row items-end gap-3">
           <NavItem
             active={pathname === "/home"}
@@ -78,7 +80,7 @@ export default function FloatingNav() {
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={() => router.navigate("/")}
-          className="w-[72px] h-[72px] mb-3 rounded-full bg-cream items-center justify-center border-4 border-brand"
+          className={`w-[72px] h-[72px] mb-3 rounded-full bg-cream items-center justify-center border-4  ${colorScheme === "dark" ? "border-brand/40" : "border-brand"}`}
           style={softShadow}
         >
           <Ionicons name="camera" size={30} color={brandInk} />
@@ -102,7 +104,6 @@ export default function FloatingNav() {
             }
           />
         </View>
-
       </View>
     </View>
   );
