@@ -45,8 +45,6 @@ export default function Settings() {
   const brandInk = useThemeColor("brand-ink", "#C2531A");
   const lineColor = useThemeColor("line", "#F0E4CF");
   const paper = useThemeColor("paper", "#FFFFFF");
-  const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === "dark";
 
   useEffect(() => {
     let cancelled = false;
@@ -72,7 +70,6 @@ export default function Settings() {
   };
 
   const handleDarkChange = (next: boolean) => {
-    // Diagnostic only: measures the re-render cascade for this toggle.
     beginThemeToggleProbe(`settings -> ${next ? "dark" : "light"}`);
     setDark(next);
     storeAppearance(next ? "dark" : "light");
@@ -110,7 +107,7 @@ export default function Settings() {
               value={dark}
               onValueChange={handleDarkChange}
               trackColor={{ false: lineColor, true: brandColor }}
-              thumbColor={paper}
+              thumbColor="white"
               ios_backgroundColor={lineColor}
             />
           </View>
@@ -136,8 +133,9 @@ export default function Settings() {
           ) : (
             <Text className="text-base font-body-medium text-ink dark:text-ink-dark">
               {time.toLocaleTimeString([], {
-                hour: "2-digit",
+                hour: "numeric",
                 minute: "2-digit",
+                hour12: true,
               })}
             </Text>
           )}
@@ -145,7 +143,12 @@ export default function Settings() {
         </TouchableOpacity>
 
         {Platform.OS !== "ios" && showPicker && (
-          <DateTimePicker value={time} mode="time" onChange={handleChange} />
+          <DateTimePicker
+            value={time}
+            mode="time"
+            is24Hour={false}
+            onChange={handleChange}
+          />
         )}
 
         <TouchableOpacity

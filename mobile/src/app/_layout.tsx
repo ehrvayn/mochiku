@@ -63,9 +63,6 @@ export default function RootLayout() {
   const segments = useSegments();
   const inOnboarding = segments[0] === "onboarding";
 
-  // The intro splash and the whole onboarding flow are always rendered in
-  // light, regardless of the stored preference. Once the user is past
-  // onboarding, restore whatever they picked in Settings.
   const lightLocked = showIntro || inOnboarding;
   useEffect(() => {
     nativeColorScheme.set(lightLocked ? "light" : readStoredAppearance());
@@ -87,7 +84,7 @@ export default function RootLayout() {
     SplashScreen.hideAsync();
 
     const sub = player.addListener("playToEnd", () => {
-      opacity.value = withTiming(0, { duration: 400 }, (finished) => {
+      opacity.value = withTiming(0, { duration: 200 }, (finished) => {
         if (finished) runOnJS(setShowIntro)(false);
       });
     });
@@ -98,9 +95,6 @@ export default function RootLayout() {
   useEffect(() => {
     syncReminders();
 
-    // Warm both list caches at startup, without blocking render. This is what
-    // lets the first Home -> Library navigation show real rows instead of a
-    // skeleton, since Library's cache is otherwise empty on its first visit.
     void refreshHome();
     void refreshLibrary();
 
@@ -144,7 +138,9 @@ export default function RootLayout() {
             contentFit="cover"
             nativeControls={false}
           />
-          <Text style={styles.brandText}>MOCHIKU</Text>
+          <Text style={styles.brandText}>
+            MOCHIKU
+          </Text>
         </Animated.View>
       </View>
     );
@@ -162,10 +158,7 @@ export default function RootLayout() {
         <View style={{ flex: 1 }}>
           <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
           <Stack screenOptions={{ contentStyle: { backgroundColor: cream } }}>
-            <Stack.Screen
-              name="onboarding"
-              options={{ headerShown: false }}
-            />
+            <Stack.Screen name="onboarding" options={{ headerShown: false }} />
           </Stack>
           <FloatingNav />
         </View>
@@ -183,7 +176,7 @@ const styles = StyleSheet.create({
   introContent: {
     alignItems: "center",
     justifyContent: "center",
-    gap: 16,
+    gap: 6,
   },
   video: {
     width: 160,
@@ -192,8 +185,8 @@ const styles = StyleSheet.create({
   },
   brandText: {
     fontFamily: "Nunito_800ExtraBold",
-    fontSize: 24,
+    fontSize: 40,
     color: "#FFF8EC",
-    letterSpacing: 4,
+    letterSpacing: 10,
   },
 });

@@ -5,6 +5,7 @@ import Storage from "expo-sqlite/kv-store";
 import { useEffect, useRef, useState } from "react";
 import { savePhotoPermanently } from "../services/photos";
 import { getUploadMessage, uploadPhoto } from "../services/upload";
+import { getActiveCooldown, getCooldownMessage } from "../services/cooldown";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AllowAccess } from "../components/AllowAccess";
@@ -33,7 +34,7 @@ import {
 } from "../services/notifications";
 import { useThemeColor } from "../theme";
 
-type Status = "idle" | "processing" | "retrying" | "done" | "error";
+type Status = "idle" | "processing" | "done" | "error";
 type ActiveStatus = Exclude<Status, "idle">;
 type NotifStatus = "granted" | "denied" | "undetermined";
 
@@ -41,20 +42,17 @@ const ASKED_KEY = "access_asked";
 
 const STATUS_COPY: Record<ActiveStatus, string> = {
   processing: "Reading your photo...",
-  retrying: "Service busy, retrying...",
-  done: "Saved to your shelf",
-  error: "Saved to drafts. Will process when back online",
+  done: "Saved to your library",
+  error: "Saved to drafts",
 };
 
 const STATUS_MOOD: Record<ActiveStatus, Mood> = {
   processing: "thinking",
-  retrying: "thinking",
   done: "happy",
   error: "worried",
 };
 
 const SNAP_COOLDOWN_MS = 3000;
-const RETRY_HINT_DELAY_MS = 4000;
 
 const ZOOM_STEPS = [
   { label: "1x", value: 0 },
@@ -94,7 +92,7 @@ function StatusPopup({
     ]).start();
   }, [scale, opacity]);
 
-  const busy = status === "processing" || status === "retrying";
+  const busy = status === "processing";
 
   return (
     <Animated.View
@@ -210,24 +208,32 @@ export default function CameraScreen() {
     );
   }
 
-  const busy = status === "processing" || status === "retrying";
+  const busy = status === "processing";
   const locked = cooling || status !== "idle";
 
   const processPhoto = async (uri: string) => {
+    // The photo is saved and drafted first either way, so an early exit still
+    // leaves a readable draft behind — it just skips a doomed upload.
+    const cooldown = getActiveCooldown();
+
     const permanentUri = savePhotoPermanently(uri);
     const itemId = await insertItem(permanentUri);
     setErrorText("");
-    setStatus("processing");
 
-    const retryHintTimer = setTimeout(() => {
-      setStatus((s) => (s === "processing" ? "retrying" : s));
-    }, RETRY_HINT_DELAY_MS);
+    if (cooldown) {
+      setErrorText(getCooldownMessage(cooldown.code, cooldown.remaining));
+      setStatus("error");
+      setTimeout(() => setStatus("idle"), 2500);
+      return;
+    }
+
+    setStatus("processing");
 
     try {
       const result = await uploadPhoto(permanentUri);
 
       if (!result.ok) {
-        setErrorText("Couldn't read that photo");
+        setErrorText("Couldn't read that photo. Saved to drafts.");
         setStatus("error");
         return;
       }
@@ -236,10 +242,16 @@ export default function CameraScreen() {
       await syncReminders();
       setStatus("done");
     } catch (error) {
-      setErrorText(getUploadMessage(error));
+      // If this failure is what tripped the cooldown, say so plainly instead
+      // of implying we will try again shortly.
+      const nowCooling = getActiveCooldown();
+      setErrorText(
+        nowCooling
+          ? getCooldownMessage(nowCooling.code, nowCooling.remaining)
+          : getUploadMessage(error),
+      );
       setStatus("error");
     } finally {
-      clearTimeout(retryHintTimer);
       setTimeout(() => setStatus("idle"), 2500);
     }
   };

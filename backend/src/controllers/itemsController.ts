@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { extractDataFromImage } from "../services/extractionService.js";
+import { extractDataFromImage, retryAfterMs } from "../services/extractionService.js";
 
 export async function uploadItem(req: Request, res: Response) {
   if (!req.file) {
@@ -18,11 +18,16 @@ export async function uploadItem(req: Request, res: Response) {
     console.error("Extraction failed after retries:", err);
 
     if (status === 503 || status === 429) {
+      // Hand the client the provider's reset window so its backoff matches the
+      // actual rate-limit window instead of assuming one.
+      const waitMs = retryAfterMs(err);
+      if (waitMs) res.set("Retry-After", String(Math.ceil(waitMs / 1000)));
       return res.status(503).json({
         ok: false,
         error: "Extraction failed",
         status: "failed: service busy",
         retryable: true,
+        retryAfterMs: waitMs,
       });
     }
 

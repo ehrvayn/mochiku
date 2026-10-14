@@ -41,13 +41,13 @@ export function MascotHeader({
   mood: Mood;
 }) {
   return (
-    <View className="flex-row items-center">
+    <View className="flex-row gap-2 items-center">
       <View className="items-center justify-center">
-        <Mochiku mood={mood} height={117} width={110} />
+        <Mochiku mood={mood} height={92} width={86} />
       </View>
       <View className="flex-1 justify-center">
         <View
-          className="relative rounded-3xl p-4 bg-paper dark:bg-paper-dark border border-line dark:border-line-dark shadow-sm"
+          className="relative rounded-3xl p-3.5 bg-paper dark:bg-paper-dark border border-line dark:border-line-dark shadow-sm"
           style={softShadow}
         >
           <Text className="text-sm font-heading text-ink dark:text-ink-dark leading-snug">

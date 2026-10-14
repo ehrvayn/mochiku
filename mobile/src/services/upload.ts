@@ -1,8 +1,13 @@
 import { File } from "expo-file-system";
 import { getItemById, saveExtractedData, getItemsByStatus } from "../db/items";
+import {
+  getActiveCooldown,
+  recordUploadFailure,
+  recordUploadSuccess,
+} from "./cooldown";
 import { syncReminders } from "./notifications";
 
-const API_URL = "http://192.168.1.12:3000";
+const API_URL = "http://192.168.1.6:3000";
 const UPLOAD_TIMEOUT_MS = 20000;
 
 export type UploadErrorCode =
@@ -15,10 +20,13 @@ export type UploadErrorCode =
 
 export class UploadError extends Error {
   code: UploadErrorCode;
-  constructor(code: UploadErrorCode) {
+  /** Provider-supplied hint for how long its rate-limit window lasts. */
+  retryAfterMs?: number;
+  constructor(code: UploadErrorCode, retryAfterMs?: number) {
     super(code);
     this.name = "UploadError";
     this.code = code;
+    this.retryAfterMs = retryAfterMs;
   }
 }
 
@@ -27,17 +35,50 @@ const isUploadError = (e: unknown): e is UploadError =>
   e !== null &&
   (e as UploadError).name === "UploadError";
 
+/** Feed the backoff tracker, then rethrow unchanged so callers see the code. */
+const record = (error: UploadError): UploadError => {
+  recordUploadFailure(error.code, error.retryAfterMs);
+  return error;
+};
+
+/** Every message states the reason first, then what happened to the photo. */
 const MESSAGES: Record<UploadErrorCode, string> = {
-  unreachable: "Can't reach the server. Saved to drafts, will retry later",
-  timeout: "That took too long. Saved to drafts, will retry later",
-  busy: "The reader is busy. Saved to drafts, will retry later",
-  quota: "Daily scan limit reached. Saved to drafts, will retry later",
-  server: "Something went wrong. Saved to drafts, will retry later",
-  unknown: "Couldn't process that photo. Saved to drafts",
+  unreachable:
+    "Can't reach the server right now. Saved to drafts — we'll read it when you're back online.",
+  timeout:
+    "That took too long to read. Saved to drafts — we'll give it another go shortly.",
+  busy: "The reader's busy right now. Saved to drafts — we'll pick it up shortly.",
+  quota:
+    "You've used today's reading allowance. Saved to drafts — they'll come through once it resets.",
+  server:
+    "Something went wrong reading that. Saved to drafts — we'll try it again shortly.",
+  unknown: "Couldn't read that photo. Saved to drafts — we'll take another look later.",
 };
 
 export const getUploadMessage = (e: unknown): string =>
   MESSAGES[isUploadError(e) ? e.code : "unknown"];
+
+/** Pull the provider's reset hint off a rate-limit response, if it sent one. */
+const readRetryAfterMs = (response: Response): number | undefined => {
+  const direct = response.headers.get("retry-after");
+  const groqStyle =
+    response.headers.get("x-ratelimit-reset-requests") ??
+    response.headers.get("x-ratelimit-reset-tokens");
+  const value = direct ?? groqStyle;
+  if (!value) return undefined;
+
+  const seconds = Number(value);
+  if (Number.isFinite(seconds)) return seconds * 1000;
+
+  const match = value.match(/^(\d+)h(\d+)m(\d+)s$/) ?? value.match(/^(\d+)m(\d+)s$/);
+  if (!match) return undefined;
+  if (match.length === 4) {
+    const [, h, m, s] = match;
+    return (Number(h) * 3600 + Number(m) * 60 + Number(s)) * 1000;
+  }
+  const [, m, s] = match;
+  return (Number(m) * 60 + Number(s)) * 1000;
+};
 
 export async function isServerUp(): Promise<boolean> {
   try {
@@ -52,7 +93,7 @@ export async function isServerUp(): Promise<boolean> {
 }
 
 export async function uploadPhoto(uri: string): Promise<any> {
-  if (!(await isServerUp())) throw new UploadError("unreachable");
+  if (!(await isServerUp())) throw record(new UploadError("unreachable"));
 
   const file = new File(uri);
 
@@ -72,20 +113,22 @@ export async function uploadPhoto(uri: string): Promise<any> {
     if (!response.ok) {
       const body = await response.json().catch(() => null);
       if (body?.status === "failed: quota exceeded") {
-        throw new UploadError("quota");
+        throw record(new UploadError("quota"));
       }
       if (response.status === 503 || response.status === 429) {
-        throw new UploadError("busy");
+        throw record(new UploadError("busy", readRetryAfterMs(response)));
       }
-      throw new UploadError("server");
+      throw record(new UploadError("server"));
     }
 
-    return await response.json();
+    const data = await response.json();
+    recordUploadSuccess();
+    return data;
   } catch (err) {
     if (isUploadError(err)) throw err;
-    if ((err as Error)?.name === "AbortError") throw new UploadError("timeout");
-    if (err instanceof TypeError) throw new UploadError("unreachable");
-    throw new UploadError("unknown");
+    if ((err as Error)?.name === "AbortError") throw record(new UploadError("timeout"));
+    if (err instanceof TypeError) throw record(new UploadError("unreachable"));
+    throw record(new UploadError("unknown"));
   } finally {
     clearTimeout(timer);
   }
@@ -106,12 +149,18 @@ export async function processItem(itemId: string): Promise<boolean> {
 }
 
 export async function processPendingUploads(): Promise<number> {
+  // A rate-limit streak is being backed off on purpose. Skip the whole pass
+  // rather than letting the poller spend the cooldown still failing.
+  if (getActiveCooldown()) return 0;
+
   const stuck = await getItemsByStatus("uploaded");
   if (stuck.length === 0) return 0;
   if (!(await isServerUp())) return 0;
 
   let succeeded = 0;
   for (const item of stuck) {
+    // Re-check each iteration: the first item may have tripped the cooldown.
+    if (getActiveCooldown()) break;
     const ok = await processItem(item.id);
     if (ok) succeeded++;
   }

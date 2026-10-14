@@ -22,20 +22,31 @@ Rules:
 - confidence is 0 to 1 for EVERY value: 0.95+ clear and printed, 0.8 to 0.94 readable, 0.6 to 0.79 blurry or ambiguous, below 0.6 mostly a guess. Lower it for blur, glare, cropping, handwriting and anything inferred.
 - If the image is unreadable: category "other", title "Unreadable photo", deadline null, fields {}.`;
 
-const MAX_ATTEMPTS = 3;
-const BASE_DELAY_MS = 3000;
-const MAX_RETRY_WAIT_MS = 30_000;
-const RETRYABLE_STATUS = [429, 500, 503];
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
 type GroqError = { status?: number; headers?: Record<string, string> };
 
-const isRetryable = (err: unknown) => {
-  const e = err as GroqError;
-  if (!RETRYABLE_STATUS.includes(e?.status ?? 0)) return false;
-  const retryAfter = parseFloat(e.headers?.["retry-after"] ?? "");
-  return !(!Number.isNaN(retryAfter) && retryAfter * 1000 > MAX_RETRY_WAIT_MS);
+/**
+ * Read the provider's reset window so the client can back off for the right
+ * length instead of guessing.
+ */
+export const retryAfterMs = (err: unknown): number | undefined => {
+  const headers = (err as GroqError)?.headers ?? {};
+  const raw =
+    headers["retry-after"] ??
+    headers["x-ratelimit-reset-requests"] ??
+    headers["x-ratelimit-reset-tokens"];
+  if (!raw) return undefined;
+
+  const seconds = Number(raw);
+  if (Number.isFinite(seconds)) return seconds * 1000;
+
+  const match = String(raw).match(/^(\d+)h(\d+)m(\d+)s$/) ?? String(raw).match(/^(\d+)m(\d+)s$/);
+  if (!match) return undefined;
+  if (match.length === 4) {
+    const [, h, m, s] = match;
+    return (Number(h) * 3600 + Number(m) * 60 + Number(s)) * 1000;
+  }
+  const [, m, s] = match;
+  return (Number(m) * 60 + Number(s)) * 1000;
 };
 
 export async function extractDataFromImage(
@@ -45,44 +56,45 @@ export async function extractDataFromImage(
 ) {
   const base64Image = buffer.toString("base64");
 
-  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-    try {
-      const completion = await groq.chat.completions.create({
-        model: MODEL,
-        temperature: 0,
-        response_format: { type: "json_object" },
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "text", text: buildPrompt(today) },
-              {
-                type: "image_url",
-                image_url: { url: `data:${mimeType};base64,${base64Image}` },
-              },
-            ],
-          },
-        ],
-      });
+  // Single attempt on purpose. The client has already persisted the photo as a
+  // draft before it calls us, so a failure is recoverable without holding this
+  // request open. A rate limit is sustained load rather than a transient blip,
+  // so retrying here would mostly just delay the draft by a few seconds and
+  // add pressure to an already-throttled provider. Backoff lives on the client.
+  try {
+    const completion = await groq.chat.completions.create({
+      model: MODEL,
+      temperature: 0,
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: buildPrompt(today) },
+            {
+              type: "image_url",
+              image_url: { url: `data:${mimeType};base64,${base64Image}` },
+            },
+          ],
+        },
+      ],
+    });
 
-      const text = completion.choices[0]?.message?.content ?? "";
-      const data = JSON.parse(text.replace(/```json|```/g, "").trim());
+    const text = completion.choices[0]?.message?.content ?? "";
+    const data = JSON.parse(text.replace(/```json|```/g, "").trim());
 
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(data.deadline?.value ?? "")) {
-        data.deadline = {
-          value: null,
-          confidence: data.deadline?.confidence ?? 0,
-        };
-      }
-      return data;
-    } catch (err) {
-      if (!isRetryable(err) || attempt === MAX_ATTEMPTS) throw err;
-      const delay = BASE_DELAY_MS * 2 ** (attempt - 1);
-      console.log(
-        `failed: retrying (attempt ${attempt}/${MAX_ATTEMPTS}) in ${delay}ms`,
-      );
-      await sleep(delay);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(data.deadline?.value ?? "")) {
+      data.deadline = {
+        value: null,
+        confidence: data.deadline?.confidence ?? 0,
+      };
     }
+    return data;
+  } catch (err) {
+    console.error(
+      `Extraction failed (status ${(err as GroqError)?.status ?? "n/a"}):`,
+      err,
+    );
+    throw err;
   }
-  throw new Error("Extraction failed");
 }

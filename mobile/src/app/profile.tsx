@@ -32,6 +32,20 @@ export default function Profile() {
 
   const firstName = user?.name?.split(" ")[0] || "Friend";
 
+  // Stored as 24-hour "HH:MM"; shown here as 12-hour, e.g. "9:00 AM".
+  const reminderLabel = (() => {
+    if (!user?.reminder_time) return "—";
+    const [h, m] = user.reminder_time.split(":").map(Number);
+    if (!Number.isFinite(h) || !Number.isFinite(m)) return "—";
+    const date = new Date();
+    date.setHours(h, m, 0, 0);
+    return date.toLocaleTimeString([], {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  })();
+
   return (
     <View className="flex-1 bg-cream dark:bg-night">
       <Stack.Screen options={{ headerShown: false }} />
@@ -76,7 +90,7 @@ export default function Profile() {
             <Row
               icon="time-outline"
               label="Reminder time"
-              value={user?.reminder_time || "—"}
+              value={reminderLabel}
             />
           </View>
 

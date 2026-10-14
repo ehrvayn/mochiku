@@ -14,12 +14,26 @@ import {
 } from "../components/home/HomeParts";
 import { DeadlineEntry, useHomeData } from "../hooks/useHomeData";
 import HomeSkeleton from "../components/home/HomeSkeleton";
+import StatusCarousel from "../components/home/StatusCarousel";
 import { useThemeColor } from "../theme";
 import { useColorScheme } from "nativewind";
 import { Ionicons } from "@expo/vector-icons";
 import { ReactNode } from "react";
 
 type StatusItem = { id: string; message: ReactNode; mood: Mood };
+
+/**
+ * Plain-text versions of each status for screen readers. The visible copy is
+ * JSX, so it can't be announced meaningfully on its own.
+ */
+const STATUS_ACCESSIBILITY_LABELS: Record<string, string> = {
+  "hero-urgent": "Urgent: a deadline is due today or tomorrow.",
+  overdue: "Overdue: one or more items are past their deadline.",
+  pending: "Needs review: some photos have details to confirm.",
+  week: "Status: deadlines scheduled this week.",
+  "hero-idle": "Status: nothing urgent coming up.",
+  empty: "Status: no deadlines yet. Snap a photo to get started.",
+};
 
 function getStates(s: {
   hero: DeadlineEntry | null;
@@ -141,28 +155,7 @@ export default function Home() {
     [hero, overdueCount, weekCount, pending.length, name],
   );
 
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  useEffect(() => {
-    setCurrentIndex(0);
-  }, [states.length]);
-
-  useEffect(() => {
-    if (states.length <= 1) return;
-
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % states.length);
-    }, 4500);
-
-    return () => clearInterval(interval);
-  }, [states.length]);
-
-  const activeState = states[currentIndex] ?? states[0];
   const isEmpty = !hero && pending.length === 0 && groups.length === 0;
-
-  // Show the skeleton only while the very first load is in flight. With a
-  // warm cache this is false on the first frame, so navigating back to Home
-  // renders real content immediately.
   if (isLoading) {
     return (
       <>
@@ -192,34 +185,25 @@ export default function Home() {
         showsVerticalScrollIndicator={false}
       >
         <View
-          className={`mb-6 pb-6 rounded-b-[50px] px-5 justify-center ${isDark ? "bg-brand-deep" : "bg-brand"}`}
-          style={{ paddingTop: insets.top + 16, minHeight: insets.top + 140 }}
+          className={`mb-5 pb-1 rounded-b-[40px] px-5 justify-center ${isDark ? "bg-brand-deep" : "bg-brand"}`}
+          style={{ paddingTop: insets.top + 10, minHeight: insets.top + 116 }}
         >
-          <Animated.View
-            key={activeState.id}
-            entering={FadeIn.duration(350)}
-            exiting={FadeOut.duration(200)}
-          >
-            <MascotHeader
-              message={activeState.message}
-              mood={activeState.mood}
-            />
-          </Animated.View>
-
-          {states.length > 1 && (
-            <View className="flex-row justify-center items-center gap-1.5 mt-3">
-              {states.map((st, idx) => (
-                <View
-                  key={st.id}
-                  className={`h-1.5 rounded-full transition-all ${
-                    idx === currentIndex
-                      ? "w-5 bg-brand border border-brand"
-                      : "w-1.5 bg-white/30"
-                  }`}
-                />
-              ))}
-            </View>
-          )}
+          <StatusCarousel
+            ids={states.map((s) => s.id)}
+            accessibilityLabels={STATUS_ACCESSIBILITY_LABELS}
+            render={(index) => {
+              const state = states[index];
+              return (
+                <Animated.View
+                  key={state.id}
+                  entering={FadeIn.duration(260)}
+                  exiting={FadeOut.duration(140)}
+                >
+                  <MascotHeader message={state.message} mood={state.mood} />
+                </Animated.View>
+              );
+            }}
+          />
         </View>
 
         {hero && (

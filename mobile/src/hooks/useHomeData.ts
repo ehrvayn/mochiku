@@ -55,10 +55,12 @@ export function useHomeData() {
       hero,
       overdueCount: entries.filter((e) => e.days < 0).length,
       weekCount: entries.filter((e) => e.days >= 0 && e.days <= 7).length,
+      // Overdue first: if something is already late it outranks everything
+      // else on screen, then nearest upcoming, then the long tail.
       groups: [
+        { title: "Overdue", items: rest.filter((e) => e.days < 0) },
         { title: "This week", items: rest.filter((e) => e.days >= 0 && e.days <= 7) },
         { title: "Later", items: rest.filter((e) => e.days > 7) },
-        { title: "Overdue", items: rest.filter((e) => e.days < 0) },
       ].filter((g) => g.items.length > 0),
     };
   }, [upcoming]);

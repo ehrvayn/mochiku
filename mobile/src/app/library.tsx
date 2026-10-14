@@ -42,8 +42,10 @@ import { useColorScheme } from "nativewind";
 import LibrarySkeleton from "../components/library/LibrarySkeleton";
 
 /** Polling cadence while the Drafts tab is open, so finished uploads move
- *  from Drafts to Saved without a manual pull-to-refresh. */
-const DRAFTS_POLL_MS = 4000;
+ *  from Drafts to Saved without a manual pull-to-refresh. Kept relaxed: this
+ *  loop is the app's main source of request pressure, and rate-limit backoff
+ *  lives in services/cooldown.ts. */
+const DRAFTS_POLL_MS = 15000;
 
 /** Stable empty array so derived memos below do not churn. */
 const EMPTY_ITEMS: Item[] = [];

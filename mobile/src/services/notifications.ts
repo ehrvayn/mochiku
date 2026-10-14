@@ -2,6 +2,7 @@ import Constants, { ExecutionEnvironment } from "expo-constants";
 import * as Device from "expo-device";
 import { Platform } from "react-native";
 import { getRemindableItems } from "../db/items";
+import { ensureLocalUser } from "../db/user";
 
 const isExpoGo =
   Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
@@ -62,6 +63,19 @@ export async function registerForNotificationsAsync(): Promise<boolean> {
   return true;
 }
 
+/** Fallback local time-of-day when the user hasn't set one. */
+const DEFAULT_REMINDER_TIME = { hour: 9, minute: 0 };
+
+/** Parses a "HH:MM" string into hours/minutes, falling back to the default. */
+function parseReminderTime(value: string | null | undefined) {
+  const match = /^(\d{1,2}):(\d{2})$/.exec(value ?? "");
+  if (!match) return DEFAULT_REMINDER_TIME;
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  if (hour > 23 || minute > 59) return DEFAULT_REMINDER_TIME;
+  return { hour, minute };
+}
+
 export function syncReminders(): Promise<void> {
   syncing = syncing.then(runSync).catch((err) => {
     console.log("syncReminders failed:", err);
@@ -81,6 +95,9 @@ async function runSync() {
   const items = await getRemindableItems();
   const now = new Date();
 
+  const user = await ensureLocalUser();
+  const { hour, minute } = parseReminderTime(user?.reminder_time);
+
   const REMINDERS = [
     { suffix: "eve", daysBefore: 1, title: "Due tomorrow" },
     { suffix: "day", daysBefore: 0, title: "Due today" },
@@ -90,7 +107,7 @@ async function runSync() {
     for (const r of REMINDERS) {
       const when = new Date(item.deadline_at!);
       when.setDate(when.getDate() - r.daysBefore);
-      when.setHours(now.getHours(), now.getMinutes(), now.getSeconds() + 5, 0);
+      when.setHours(hour, minute, 0, 0);
       if (when <= now) continue;
 
       await Notifications.scheduleNotificationAsync({
@@ -119,19 +136,3 @@ export async function getNotificationPermissionStatus(): Promise<
   return status;
 }
 
-// export async function sendTestNotification(seconds = 5) {
-//   const Notifications = getNotifications();
-//   if (!Notifications) return;
-
-//   await Notifications.scheduleNotificationAsync({
-//     content: {
-//       title: "mochiku reminder",
-//       body: "Your electricity bill is due tomorrow.",
-//     },
-//     trigger: {
-//       type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-//       seconds,
-//       channelId: "default",
-//     },
-//   });
-// }
