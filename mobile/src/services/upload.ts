@@ -8,7 +8,7 @@ import {
 import { getClientId } from "./photos";
 import { syncReminders } from "./notifications";
 
-const API_URL = "http://192.168.1.6:3000";
+const API_URL = "http://192.168.1.8:3000";
 const UPLOAD_TIMEOUT_MS = 20000;
 
 export type UploadErrorCode =
@@ -74,15 +74,42 @@ const readRetryAfterMs = (response: Response): number | undefined => {
   return (Number(m) * 60 + Number(s)) * 1000;
 };
 
+/**
+ * Health check timeout.
+ *
+ * A free-tier host suspends idle instances and takes up to a minute to wake.
+ * Without a cap this fetch hangs for that whole window and the user watches
+ * "Reading your photo..." doing nothing, so fail fast instead: a false here
+ * just means the photo waits in drafts, which the poller picks up for free.
+ */
+const HEALTH_TIMEOUT_MS = 4000;
+
+/** Probe the server in the background so the next capture finds it awake. */
+let warmup: Promise<boolean> | null = null;
+
+export function warmServer(): void {
+  if (warmup) return;
+  warmup = isServerUp().finally(() => {
+    warmup = null;
+  });
+}
+
 export async function isServerUp(): Promise<boolean> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), HEALTH_TIMEOUT_MS);
+
   try {
-    const response = await fetch(`${API_URL}/health`);
+    const response = await fetch(`${API_URL}/health`, {
+      signal: controller.signal,
+    });
     if (!response.ok) return false;
 
     const data = await response.json();
     return data?.running === true;
   } catch {
     return false;
+  } finally {
+    clearTimeout(timer);
   }
 }
 

@@ -4,7 +4,7 @@ import { router, Stack } from "expo-router";
 import Storage from "expo-sqlite/kv-store";
 import { useEffect, useRef, useState } from "react";
 import { savePhotoPermanently } from "../services/photos";
-import { getUploadMessage, uploadPhoto } from "../services/upload";
+import { getUploadMessage, uploadPhoto, warmServer } from "../services/upload";
 import { getActiveCooldown, getCooldownMessage } from "../services/cooldown";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -147,6 +147,9 @@ export default function CameraScreen() {
   const [zoom, setZoom] = useState(0);
   const [cooling, setCooling] = useState(false);
   const zoomStart = useRef(0);
+  // Captures can overlap, so an older request must not clear a newer capture's
+  // popup. Only the most recent request owns the status.
+  const latestCapture = useRef(0);
 
   const pinch = Gesture.Pinch()
     .runOnJS(true)
@@ -160,12 +163,17 @@ export default function CameraScreen() {
 
   useEffect(() => {
     getNotificationPermissionStatus().then(setNotifStatus);
+    // Open the camera already probing, so the host is waking in the background
+    // while the user lines up their first photo.
+    warmServer();
   }, []);
 
   useEffect(() => {
     const sub = AppState.addEventListener("change", (state) => {
       if (state === "active") {
         getPermission();
+        // Same reasoning as mount: resume with the host already waking.
+        warmServer();
         getNotificationPermissionStatus().then((s) => {
           setNotifStatus(s);
           if (s === "granted") syncReminders();
@@ -209,23 +217,36 @@ export default function CameraScreen() {
   }
 
   const busy = status === "processing";
-  const locked = cooling || status !== "idle";
+  // Only the tap-cooldown locks the shutter. A read in flight must not, since
+  // every capture is its own draft row and nothing is shared or at risk.
+  const locked = cooling;
+
+  const finishCapture = (id: number) => {
+    setTimeout(() => {
+      setStatus((s) => (id === latestCapture.current ? "idle" : s));
+    }, 2500);
+  };
 
   const processPhoto = async (uri: string) => {
     const cooldown = getActiveCooldown();
 
     const permanentUri = savePhotoPermanently(uri);
     const itemId = await insertItem(permanentUri);
+    const captureId = ++latestCapture.current;
     setErrorText("");
 
     if (cooldown) {
       setErrorText(getCooldownMessage(cooldown.code, cooldown.remaining));
       setStatus("error");
-      setTimeout(() => setStatus("idle"), 2500);
+      finishCapture(captureId);
       return;
     }
 
     setStatus("processing");
+
+    // Fire-and-forget: if the host is asleep this starts waking it while the
+    // capture below proceeds. By the time a poller pass runs, it is likely up.
+    warmServer();
 
     try {
       const result = await uploadPhoto(permanentUri);
@@ -233,6 +254,7 @@ export default function CameraScreen() {
       if (!result.ok) {
         setErrorText("Couldn't read that photo. Saved to drafts.");
         setStatus("error");
+        finishCapture(captureId);
         return;
       }
 
@@ -248,7 +270,7 @@ export default function CameraScreen() {
       );
       setStatus("error");
     } finally {
-      setTimeout(() => setStatus("idle"), 2500);
+      finishCapture(captureId);
     }
   };
 

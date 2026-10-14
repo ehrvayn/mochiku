@@ -48,7 +48,7 @@ export default function FloatingNav() {
   const cream = useThemeColor("cream", "#FFF8EC");
   const { colorScheme } = useColorScheme();
 
-  const navActive = cream;
+  const navActive = "white";
   const navIdle = colorScheme === "dark" ? "rgba(245, 235, 222, 0.55)" : "rgba(255, 248, 236, 0.55)";
 
   if (!VISIBLE_ON.includes(pathname)) return null;
@@ -69,7 +69,7 @@ export default function FloatingNav() {
           <NavItem
             active={pathname === "/home"}
             activeIcon="home"
-            idleIcon="home-outline"
+            idleIcon="home"
             activeColor={navActive}
             idleColor={navIdle}
             onPress={() => pathname !== "/home" && router.navigate("/home")}
@@ -77,7 +77,7 @@ export default function FloatingNav() {
           <NavItem
             active={pathname === "/library"}
             activeIcon="albums"
-            idleIcon="albums-outline"
+            idleIcon="albums"
             activeColor={navActive}
             idleColor={navIdle}
             onPress={() =>
@@ -99,7 +99,7 @@ export default function FloatingNav() {
           <NavItem
             active={pathname === "/profile"}
             activeIcon="person"
-            idleIcon="person-outline"
+            idleIcon="person"
             activeColor={navActive}
             idleColor={navIdle}
             onPress={() =>
@@ -109,7 +109,7 @@ export default function FloatingNav() {
           <NavItem
             active={pathname === "/settings"}
             activeIcon="settings"
-            idleIcon="settings-outline"
+            idleIcon="settings"
             activeColor={navActive}
             idleColor={navIdle}
             onPress={() =>
