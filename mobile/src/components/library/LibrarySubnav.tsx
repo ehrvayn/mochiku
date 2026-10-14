@@ -12,11 +12,11 @@ const TABS: { key: LibraryTab; label: string; icon: keyof typeof Ionicons.glyphM
 export default function LibrarySubnav({
   tab,
   onChange,
-  draftCount,
+  counts,
 }: {
   tab: LibraryTab;
   onChange: (tab: LibraryTab) => void;
-  draftCount: number;
+  counts: Record<LibraryTab, number>;
 }) {
   const ink = useThemeColor("ink", "#2B2438");
   const inkFaint = useThemeColor("ink-faint", "#A39DB0");
@@ -31,7 +31,7 @@ export default function LibrarySubnav({
     >
       {TABS.map(({ key, label, icon }) => {
         const active = tab === key;
-        const count = key === "drafts" ? draftCount : 0;
+        const count = counts[key] ?? 0;
         return (
           <TouchableOpacity
             key={key}

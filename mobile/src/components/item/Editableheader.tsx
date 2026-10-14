@@ -28,9 +28,13 @@ export default function EditableHeader({
   const inkFaint = useThemeColor("ink-faint", "#A39DB0");
   const soonInk = useThemeColor("soon-ink", "#9A6400");
 
-  const handleChange = (_event: unknown, date?: Date) => {
+  const handleValueChange = (_event: unknown, date: Date) => {
     setShowAndroidPicker(false);
-    if (date) onDeadlineChange(date);
+    onDeadlineChange(date);
+  };
+
+  const handleDismiss = () => {
+    setShowAndroidPicker(false);
   };
 
   return (
@@ -77,7 +81,8 @@ export default function EditableHeader({
                   value={deadline}
                   mode="date"
                   display="compact"
-                  onChange={handleChange}
+                  onValueChange={handleValueChange}
+                  onDismiss={handleDismiss}
                 />
               ) : (
                 <>
@@ -89,7 +94,8 @@ export default function EditableHeader({
                     <DateTimePicker
                       value={deadline}
                       mode="date"
-                      onChange={handleChange}
+                      onValueChange={handleValueChange}
+                      onDismiss={handleDismiss}
                     />
                   )}
                 </>

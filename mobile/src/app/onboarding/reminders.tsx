@@ -23,9 +23,13 @@ export default function Reminders() {
   const [saving, setSaving] = useState(false);
   const brandInk = useThemeColor("brand-ink", "#C2531A");
 
-  const handleChange = (_event: unknown, selected?: Date) => {
+  const handleValueChange = (_event: unknown, selected: Date) => {
     if (Platform.OS === "android") setShowAndroidPicker(false);
-    if (selected) setTime(selected);
+    setTime(selected);
+  };
+
+  const handleDismiss = () => {
+    if (Platform.OS === "android") setShowAndroidPicker(false);
   };
 
   const handleContinue = async () => {
@@ -67,14 +71,16 @@ export default function Reminders() {
                 value={time}
                 mode="time"
                 display="compact"
-                onChange={handleChange}
+                onValueChange={handleValueChange}
+                onDismiss={handleDismiss}
                 style={{ alignSelf: "flex-start" }}
               />
             ) : (
               <Text className="text-base font-body-medium text-ink">
                 {time.toLocaleTimeString([], {
-                  hour: "2-digit",
+                  hour: "numeric",
                   minute: "2-digit",
+                  hour12: true,
                 })}
               </Text>
             )}
@@ -82,7 +88,12 @@ export default function Reminders() {
           </TouchableOpacity>
 
           {Platform.OS !== "ios" && showAndroidPicker && (
-            <DateTimePicker value={time} mode="time" onChange={handleChange} />
+            <DateTimePicker
+              value={time}
+              mode="time"
+              onValueChange={handleValueChange}
+              onDismiss={handleDismiss}
+            />
           )}
         </View>
       </OnboardingShell>

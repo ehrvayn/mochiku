@@ -24,10 +24,6 @@ Rules:
 
 type GroqError = { status?: number; headers?: Record<string, string> };
 
-/**
- * Read the provider's reset window so the client can back off for the right
- * length instead of guessing.
- */
 export const retryAfterMs = (err: unknown): number | undefined => {
   const headers = (err as GroqError)?.headers ?? {};
   const raw =
@@ -56,11 +52,6 @@ export async function extractDataFromImage(
 ) {
   const base64Image = buffer.toString("base64");
 
-  // Single attempt on purpose. The client has already persisted the photo as a
-  // draft before it calls us, so a failure is recoverable without holding this
-  // request open. A rate limit is sustained load rather than a transient blip,
-  // so retrying here would mostly just delay the draft by a few seconds and
-  // add pressure to an already-throttled provider. Backoff lives on the client.
   try {
     const completion = await groq.chat.completions.create({
       model: MODEL,

@@ -5,6 +5,7 @@ import {
   recordUploadFailure,
   recordUploadSuccess,
 } from "./cooldown";
+import { getClientId } from "./photos";
 import { syncReminders } from "./notifications";
 
 const API_URL = "http://192.168.1.6:3000";
@@ -20,7 +21,6 @@ export type UploadErrorCode =
 
 export class UploadError extends Error {
   code: UploadErrorCode;
-  /** Provider-supplied hint for how long its rate-limit window lasts. */
   retryAfterMs?: number;
   constructor(code: UploadErrorCode, retryAfterMs?: number) {
     super(code);
@@ -35,30 +35,23 @@ const isUploadError = (e: unknown): e is UploadError =>
   e !== null &&
   (e as UploadError).name === "UploadError";
 
-/** Feed the backoff tracker, then rethrow unchanged so callers see the code. */
 const record = (error: UploadError): UploadError => {
   recordUploadFailure(error.code, error.retryAfterMs);
   return error;
 };
 
-/** Every message states the reason first, then what happened to the photo. */
 const MESSAGES: Record<UploadErrorCode, string> = {
-  unreachable:
-    "Can't reach the server right now. Saved to drafts — we'll read it when you're back online.",
-  timeout:
-    "That took too long to read. Saved to drafts — we'll give it another go shortly.",
-  busy: "The reader's busy right now. Saved to drafts — we'll pick it up shortly.",
-  quota:
-    "You've used today's reading allowance. Saved to drafts — they'll come through once it resets.",
-  server:
-    "Something went wrong reading that. Saved to drafts — we'll try it again shortly.",
-  unknown: "Couldn't read that photo. Saved to drafts — we'll take another look later.",
+  unreachable: "Can't reach the server. Saved to drafts.",
+  timeout: "Took too long to read. Saved to drafts.",
+  busy: "The reader's busy. Saved to drafts.",
+  quota: "The reader hit its limit. Saved to drafts.",
+  server: "Couldn't read that. Saved to drafts.",
+  unknown: "Couldn't read that. Saved to drafts.",
 };
 
 export const getUploadMessage = (e: unknown): string =>
   MESSAGES[isUploadError(e) ? e.code : "unknown"];
 
-/** Pull the provider's reset hint off a rate-limit response, if it sent one. */
 const readRetryAfterMs = (response: Response): number | undefined => {
   const direct = response.headers.get("retry-after");
   const groqStyle =
@@ -70,7 +63,8 @@ const readRetryAfterMs = (response: Response): number | undefined => {
   const seconds = Number(value);
   if (Number.isFinite(seconds)) return seconds * 1000;
 
-  const match = value.match(/^(\d+)h(\d+)m(\d+)s$/) ?? value.match(/^(\d+)m(\d+)s$/);
+  const match =
+    value.match(/^(\d+)h(\d+)m(\d+)s$/) ?? value.match(/^(\d+)m(\d+)s$/);
   if (!match) return undefined;
   if (match.length === 4) {
     const [, h, m, s] = match;
@@ -106,6 +100,7 @@ export async function uploadPhoto(uri: string): Promise<any> {
   try {
     const response = await fetch(`${API_URL}/items/upload`, {
       method: "POST",
+      headers: { "x-client-id": getClientId() },
       body: formData,
       signal: controller.signal,
     });
@@ -126,7 +121,8 @@ export async function uploadPhoto(uri: string): Promise<any> {
     return data;
   } catch (err) {
     if (isUploadError(err)) throw err;
-    if ((err as Error)?.name === "AbortError") throw record(new UploadError("timeout"));
+    if ((err as Error)?.name === "AbortError")
+      throw record(new UploadError("timeout"));
     if (err instanceof TypeError) throw record(new UploadError("unreachable"));
     throw record(new UploadError("unknown"));
   } finally {
@@ -149,8 +145,6 @@ export async function processItem(itemId: string): Promise<boolean> {
 }
 
 export async function processPendingUploads(): Promise<number> {
-  // A rate-limit streak is being backed off on purpose. Skip the whole pass
-  // rather than letting the poller spend the cooldown still failing.
   if (getActiveCooldown()) return 0;
 
   const stuck = await getItemsByStatus("uploaded");
@@ -159,7 +153,6 @@ export async function processPendingUploads(): Promise<number> {
 
   let succeeded = 0;
   for (const item of stuck) {
-    // Re-check each iteration: the first item may have tripped the cooldown.
     if (getActiveCooldown()) break;
     const ok = await processItem(item.id);
     if (ok) succeeded++;

@@ -212,8 +212,6 @@ export default function CameraScreen() {
   const locked = cooling || status !== "idle";
 
   const processPhoto = async (uri: string) => {
-    // The photo is saved and drafted first either way, so an early exit still
-    // leaves a readable draft behind — it just skips a doomed upload.
     const cooldown = getActiveCooldown();
 
     const permanentUri = savePhotoPermanently(uri);
@@ -242,8 +240,6 @@ export default function CameraScreen() {
       await syncReminders();
       setStatus("done");
     } catch (error) {
-      // If this failure is what tripped the cooldown, say so plainly instead
-      // of implying we will try again shortly.
       const nowCooling = getActiveCooldown();
       setErrorText(
         nowCooling

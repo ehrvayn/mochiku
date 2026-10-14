@@ -150,10 +150,10 @@ export function getCooldownMessage(code: UploadErrorCode, remaining: number) {
   const wait = humanizeDuration(remaining);
   switch (code) {
     case "quota":
-      return `You've used today's reading allowance. Saved to drafts — we'll pick these up in ${wait}.`;
+      return `The reader hit its limit. Saved to drafts — we'll retry in ${wait}.`;
     case "timeout":
-      return `The reader is struggling to keep up. Saved to drafts — we'll take another look in ${wait}.`;
+      return `The reader's struggling. Saved to drafts — we'll retry in ${wait}.`;
     default:
-      return `The reader is busy, so we're giving it a rest. Saved to drafts — we'll pick this up in ${wait}.`;
+      return `The reader's busy, so we're waiting. Saved to drafts — we'll retry in ${wait}.`;
   }
 }

@@ -56,12 +56,14 @@ export default function Settings() {
     };
   }, []);
 
-  const handleChange = (_e: unknown, selected?: Date) => {
+  const handleValueChange = (_e: unknown, selected: Date) => {
     if (Platform.OS === "android") setShowPicker(false);
-    if (selected) {
-      setTime(selected);
-      setSaved(false);
-    }
+    setTime(selected);
+    setSaved(false);
+  };
+
+  const handleDismiss = () => {
+    if (Platform.OS === "android") setShowPicker(false);
   };
 
   const handleSave = async () => {
@@ -127,7 +129,8 @@ export default function Settings() {
               value={time}
               mode="time"
               display="compact"
-              onChange={handleChange}
+              onValueChange={handleValueChange}
+              onDismiss={handleDismiss}
               style={{ alignSelf: "flex-start" }}
             />
           ) : (
@@ -147,7 +150,8 @@ export default function Settings() {
             value={time}
             mode="time"
             is24Hour={false}
-            onChange={handleChange}
+            onValueChange={handleValueChange}
+            onDismiss={handleDismiss}
           />
         )}
 

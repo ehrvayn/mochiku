@@ -293,7 +293,7 @@ export default function Library() {
         <LibrarySubnav
           tab={tab}
           onChange={handleTabChange}
-          draftCount={drafts.length}
+          counts={{ saved: saved.length, drafts: drafts.length }}
         />
       </View>
     </View>
