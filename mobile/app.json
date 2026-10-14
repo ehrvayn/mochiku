@@ -12,7 +12,7 @@
         "foregroundImage": "./assets/images/icon.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.mochiku"
+      "package": "com.mochiku.app"
     },
     "web": {
       "output": "static",

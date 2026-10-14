@@ -1,5 +1,9 @@
 node_modules/
+# Local secrets only. The mobile .env holds public config (EXPO_PUBLIC_*),
+# which is embedded in the app bundle anyway, so it must be committed.
 .env
+!mobile/.env
+.env*.local
 .expo/
 dist/
 *.log
