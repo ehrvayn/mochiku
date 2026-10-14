@@ -2,6 +2,19 @@ node_modules/
 .env
 .expo/
 dist/
-/android
-/ios
 *.log
+
+# Native build output. These live under mobile/, not at the repo root, so the
+# root-anchored /android and /ios patterns never matched them.
+/mobile/android
+/mobile/ios
+
+# Build artefacts and native compilation caches. GitHub rejects files over
+# 100MB, so these must never be tracked.
+**/build/
+**/.cxx/
+**/.gradle/
+*.apk
+*.aab
+*.so
+*.jar
