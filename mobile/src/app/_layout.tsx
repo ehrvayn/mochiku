@@ -46,6 +46,12 @@ applyStoredAppearance();
 
 const introVideoSource = require("../../assets/vid/Mochiku-intro.mp4");
 
+// Module scope, so it survives a remount of the root layout. This layout
+// returns early (intro, blank while the user query resolves, Redirect) which
+// unmounts the navigator, and expo-router remounts the layout afterwards.
+// With component state that reset showIntro to true and replayed the intro.
+let introDoneThisSession = false;
+
 export default function RootLayout() {
   const { colorScheme } = useColorScheme();
   const cream = useThemeColor("cream", "#FFF8EC");
@@ -58,7 +64,7 @@ export default function RootLayout() {
     DMSans_700Bold,
   });
 
-  const [showIntro, setShowIntro] = useState(true);
+  const [showIntro, setShowIntro] = useState(() => !introDoneThisSession);
   const [needsOnboarding, setNeedsOnboarding] = useState<boolean | null>(null);
   const segments = useSegments();
   const inOnboarding = segments[0] === "onboarding";
@@ -74,9 +80,15 @@ export default function RootLayout() {
     opacity: opacity.value,
   }));
 
+  const finishIntro = () => {
+    introDoneThisSession = true;
+    setShowIntro(false);
+  };
+
   const player = useVideoPlayer(introVideoSource, (p) => {
     p.loop = false;
-    p.play();
+    // Don't autoplay on a remount after the intro already ran this session.
+    if (!introDoneThisSession) p.play();
   });
 
   useEffect(() => {
@@ -85,7 +97,7 @@ export default function RootLayout() {
 
     const sub = player.addListener("playToEnd", () => {
       opacity.value = withTiming(0, { duration: 200 }, (finished) => {
-        if (finished) runOnJS(setShowIntro)(false);
+        if (finished) runOnJS(finishIntro)();
       });
     });
 
