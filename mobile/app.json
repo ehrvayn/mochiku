@@ -4,6 +4,7 @@
     "slug": "mochiku",
     "version": "1.0.0",
     "orientation": "portrait",
+    "userInterfaceStyle": "light",
     "icon": "./assets/images/icon.png",
     "scheme": "mochiku",
     "android": {
