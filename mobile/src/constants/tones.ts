@@ -47,7 +47,7 @@ export function getTone(days: number): Tone {
         ? "Due today"
         : days === 1
           ? "Due tomorrow"
-          : `${days} days left`;
+          : `${days}`;
 
   const style = days <= 1 ? STYLES.urgent : days <= 7 ? STYLES.soon : STYLES.calm;
   return { ...style, label };

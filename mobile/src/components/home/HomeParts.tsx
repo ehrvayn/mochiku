@@ -73,7 +73,7 @@ export function NextUpCard({ entry }: { entry: DeadlineEntry }) {
       style={softShadow}
     >
       <View
-        className={`w-28 items-center justify-center py-5 px-3 ${tone.hero}`}
+        className={`w-28 items-center bg-brand justify-center py-5 px-3 ${tone.hero}`}
       >
         <Text
           className={`font-display ${tone.heroText} ${
@@ -190,7 +190,7 @@ function DeadlineRow({
         first ? "" : "border-t border-line/60 dark:border-line-dark/60"
       }`}
     >
-      <View className="w-11 items-center justify-center bg-cream/60 dark:bg-night/60 py-1.5 rounded-2xl border border-line/40 dark:border-line-dark/40">
+      <View className="w-11 items-center justify-center bg-cream/80 dark:bg-night/80 py-1.5 rounded-2xl border border-line/40 dark:border-line-dark/40">
         <Text className="text-[10px] font-body-bold text-ink-faint dark:text-ink-faint-dark uppercase">
           {MONTHS[date.getMonth()]}
         </Text>
@@ -208,10 +208,14 @@ function DeadlineRow({
         </Text>
         <CategoryTag value={item.category} />
       </View>
+      <View className="h-full w-px bg-gray-800/20" />
 
-      <Text className={`text-xs font-body-bold ${tone.text}`}>
-        {tone.label}
-      </Text>
+      <View className="flex flex-col items-center">
+        <Text className={`text-lg font-body-bold ${tone.text}`}>
+          {tone.label}
+        </Text>
+        <Text className={`text-xs font-body-bold ${tone.text}`}>days left</Text>
+      </View>
     </TouchableOpacity>
   );
 }
