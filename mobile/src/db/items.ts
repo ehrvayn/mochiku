@@ -43,6 +43,7 @@ export async function getUpcomingItems(): Promise<Item[]> {
   return db.getAllAsync<Item>(
     `SELECT * FROM items
      WHERE status = 'confirmed' AND deadline_confirmed_at IS NOT NULL
+       AND mark_as_done = 0
      ORDER BY deadline_at ASC`,
   );
 }
@@ -102,6 +103,19 @@ export async function saveExtractedData(
   }
 }
 
+export async function markItemsDone(
+  itemIds: string[],
+  value: boolean,
+): Promise<void> {
+  if (itemIds.length === 0) return;
+  const db = await getDb();
+  const placeholders = itemIds.map(() => "?").join(",");
+  await db.runAsync(
+    `UPDATE items SET mark_as_done = ?, updated_at = ? WHERE id IN (${placeholders})`,
+    [value ? 1 : 0, new Date().toISOString(), ...itemIds],
+  );
+}
+
 export async function updateItemStatus(
   itemId: string,
   status: string,
@@ -156,11 +170,15 @@ export async function deleteItems(itemIds: string[]): Promise<void> {
   await db.runAsync(`DELETE FROM items WHERE id IN (${placeholders})`, itemIds);
 }
 
+/** Drives every scheduled reminder. `runSync` cancels all pending
+ *  notifications before rescheduling from this list, so filtering done items
+ *  out here is what actually stops them from firing. */
 export async function getRemindableItems(): Promise<Item[]> {
   const db = await getDb();
   return db.getAllAsync<Item>(
     `SELECT * FROM items
      WHERE status IN ('stored', 'confirmed') AND deadline_at IS NOT NULL
+       AND mark_as_done = 0
      ORDER BY deadline_at ASC`,
   );
 }

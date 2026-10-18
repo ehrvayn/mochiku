@@ -38,6 +38,7 @@ async function migrate(db: SQLite.SQLiteDatabase) {
       status TEXT NOT NULL DEFAULT 'uploaded',
       deadline_at TEXT,
       deadline_confirmed_at TEXT,
+      mark_as_done INTEGER NOT NULL DEFAULT 0,
       sync_status TEXT NOT NULL DEFAULT 'pending',
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
@@ -57,13 +58,34 @@ async function migrate(db: SQLite.SQLiteDatabase) {
   const cols = await db.getAllAsync<{ name: string }>(
     "PRAGMA table_info(items)",
   );
-  for (const col of [
-    "title_confidence",
-    "category_confidence",
-    "deadline_confidence",
-  ]) {
+  // CREATE TABLE IF NOT EXISTS above is a no-op on databases created by an
+  // older build, so every column added after the first release has to be
+  // backfilled here with ALTER TABLE.
+  const additions: Array<[string, string]> = [
+    ["title_confidence", "REAL"],
+    ["category_confidence", "REAL"],
+    ["deadline_confidence", "REAL"],
+    ["mark_as_done", "INTEGER NOT NULL DEFAULT 0"],
+  ];
+  for (const [col, type] of additions) {
     if (!cols.some((c) => c.name === col)) {
-      await db.execAsync(`ALTER TABLE items ADD COLUMN ${col} REAL`);
+      await db.execAsync(`ALTER TABLE items ADD COLUMN ${col} ${type}`);
+    }
+  }
+
+  const userCols = await db.getAllAsync<{ name: string }>(
+    "PRAGMA table_info(user)",
+  );
+  // notify_categories: JSON array of category labels that may raise a
+  // reminder. NULL means "every category", which is what an untouched row
+  // should keep meaning. mascot_lang is scoped to the mascot's speech only.
+  const userAdditions: Array<[string, string]> = [
+    ["notify_categories", "TEXT"],
+    ["mascot_lang", "TEXT NOT NULL DEFAULT 'en'"],
+  ];
+  for (const [col, type] of userAdditions) {
+    if (!userCols.some((c) => c.name === col)) {
+      await db.execAsync(`ALTER TABLE user ADD COLUMN ${col} ${type}`);
     }
   }
 }

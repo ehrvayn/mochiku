@@ -8,29 +8,16 @@ import Animated, {
 import { Ionicons } from "@expo/vector-icons";
 
 const ROTATE_MS = 4500;
-/** Touch target for the paging arrows. Comfortably above the 44pt minimum. */
 const ARROW_SIZE = 44;
 
 export type StatusCarouselProps = {
-  /** Stable keys, one per page. Length is the page count. */
   ids: string[];
-  /** Accessibility copy per page, keyed by id. */
   accessibilityLabels: Record<string, string>;
   render: (index: number) => ReactNode;
-  /** Set false to stop auto-rotating. */
   autoRotate?: boolean;
-  /** Fired on every manual page change, so callers can stop rotating. */
   onInteraction?: () => void;
 };
 
-/**
- * A single-card status carousel driven by paging arrows.
- *
- * The arrows are the only navigation control — no dots to hunt for and no
- * drag gesture to discover. Auto-rotation yields to the user permanently on
- * first tap, pauses while the app is backgrounded, and respects the system
- * reduce-motion setting.
- */
 export default function StatusCarousel({
   ids,
   accessibilityLabels,
@@ -53,7 +40,6 @@ export default function StatusCarousel({
     [count, onInteraction],
   );
 
-  // Auto-rotation: on by default, off once the user takes over.
   useEffect(() => {
     if (count <= 1 || !autoRotate || touched || reduceMotion) return;
 
@@ -70,7 +56,6 @@ export default function StatusCarousel({
       }
     };
 
-    // Catch up immediately if the app was backgrounded past several rotations.
     start();
     const sub = AppState.addEventListener("change", (status) => {
       status === "active" ? start() : stop();
@@ -131,11 +116,6 @@ export default function StatusCarousel({
   );
 }
 
-/**
- * A paging arrow. Wraps back around at the ends rather than going dead, so
- * there is always a working control and the user never has to reason about
- * which arrow is live.
- */
 function ArrowButton({
   direction,
   onPress,

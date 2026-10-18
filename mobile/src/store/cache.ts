@@ -76,7 +76,8 @@ export async function loadInto<T>(
     const data = await loader();
     setData(key, data);
     return data;
-  } catch {
+  } catch (error) {
+    console.log(`cache load failed for "${key}":`, error);
     const previous = entries.get(key);
     entries.set(key, {
       data: previous?.data ?? null,

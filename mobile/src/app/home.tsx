@@ -1,10 +1,20 @@
-import { Stack } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { Stack, router, useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { getUser } from "../db/user";
-import { RefreshControl, ScrollView, Text, View } from "react-native";
+import {
+  BackHandler,
+  RefreshControl,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useQueryClient } from "@tanstack/react-query";
 import { Mood } from "../components/Mochiku";
+import MarkAsDoneModal from "../components/modal/MarkAsDoneModal";
+import MarkDoneBar from "../components/home/MarkDoneBar";
+import ScanExamples from "../components/home/ScanExamples";
 import {
   DeadlineGroup,
   MascotHeader,
@@ -13,19 +23,26 @@ import {
   SectionHeader,
 } from "../components/home/HomeParts";
 import { DeadlineEntry, useHomeData } from "../hooks/useHomeData";
+import { markItemsDone } from "../db/items";
+import { syncReminders } from "../services/notifications";
+import { resyncAfterStatusChange } from "../store/appCache";
+import { Item } from "../types/item";
+import {
+  isMascotLang,
+  mascotMessages,
+  type MascotLang,
+  type MascotMessages,
+} from "../constants/i18n";
 import HomeSkeleton from "../components/home/HomeSkeleton";
 import StatusCarousel from "../components/home/StatusCarousel";
 import { useThemeColor } from "../theme";
 import { useColorScheme } from "nativewind";
-import { Ionicons } from "@expo/vector-icons";
 import { ReactNode } from "react";
 
 type StatusItem = { id: string; message: ReactNode; mood: Mood };
 
-/**
- * Plain-text versions of each status for screen readers. The visible copy is
- * JSX, so it can't be announced meaningfully on its own.
- */
+const cap = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+
 const STATUS_ACCESSIBILITY_LABELS: Record<string, string> = {
   "hero-urgent": "Urgent: a deadline is due today or tomorrow.",
   overdue: "Overdue: one or more items are past their deadline.",
@@ -35,31 +52,23 @@ const STATUS_ACCESSIBILITY_LABELS: Record<string, string> = {
   empty: "Status: no deadlines yet. Snap a photo to get started.",
 };
 
-function getStates(s: {
-  hero: DeadlineEntry | null;
-  overdueCount: number;
-  weekCount: number;
-  pendingCount: number;
-  name?: string;
-}): StatusItem[] {
+function getStates(
+  s: {
+    hero: DeadlineEntry | null;
+    overdueCount: number;
+    weekCount: number;
+    pendingCount: number;
+  },
+  t: MascotMessages,
+): StatusItem[] {
   const states: StatusItem[] = [];
 
-  const greet = (text: string): ReactNode =>
-    s.name ? (
-      <>
-        Hey <Text className="font-body-bold text-base">{s.name}</Text>, {text}
-      </>
-    ) : (
-      text.charAt(0).toUpperCase() + text.slice(1)
-    );
+  const greet = t.greet;
 
   if (s.hero && s.hero.days <= 1) {
     states.push({
       id: "hero-urgent",
-      message:
-        s.hero.days === 0
-          ? "Clock's ticking! Something needs your attention today."
-          : "Heads up! You have a deadline landing tomorrow.",
+      message: s.hero.days === 0 ? cap(t.heroToday) : cap(t.heroTomorrow),
       mood: "worried",
     });
   }
@@ -67,7 +76,7 @@ function getStates(s: {
   if (s.overdueCount > 0) {
     states.push({
       id: "overdue",
-      message: `${s.overdueCount} item${s.overdueCount > 1 ? "s slipped past" : " slipped past"}. Let's clear ${s.overdueCount > 1 ? "them" : "it"} out first!`,
+      message: cap(t.overdue(s.overdueCount)),
       mood: "worried",
     });
   }
@@ -75,7 +84,7 @@ function getStates(s: {
   if (s.pendingCount > 0) {
     states.push({
       id: "pending",
-      message: `I spotted ${s.pendingCount} photo${s.pendingCount === 1 ? "" : "s"} with fuzzy details. Mind double-checking?`,
+      message: cap(t.pending(s.pendingCount)),
       mood: "confused",
     });
   }
@@ -83,9 +92,7 @@ function getStates(s: {
   if (s.weekCount > 0) {
     states.push({
       id: "week",
-      message: greet(
-        `looking solid! ${s.weekCount} item${s.weekCount === 1 ? "" : "s"} scheduled for this week.`,
-      ),
+      message: greet(t.week(s.weekCount)),
       mood: "happy",
     });
   }
@@ -94,17 +101,13 @@ function getStates(s: {
     if (s.hero) {
       states.push({
         id: "hero-idle",
-        message: greet(
-          `smooth sailing! Nothing urgent until ${s.hero.days} days from now.`,
-        ),
+        message: greet(t.heroIdle(s.hero.days)),
         mood: "happy",
       });
     } else {
       states.push({
         id: "empty",
-        message: greet(
-          "no deadlines coming up. Snap a photo and I'll catch the dates!",
-        ),
+        message: greet(t.empty()),
         mood: "sleeping",
       });
     }
@@ -124,36 +127,123 @@ export default function Home() {
     refreshing,
     refresh,
     isLoading,
+    markableItems,
   } = useHomeData();
   const brand = useThemeColor("brand", "#FF8A4C");
-
+  const queryClient = useQueryClient();
+  const [selecting, setSelecting] = useState(false);
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [showMarkDone, setShowMarkDone] = useState(false);
+  const [isMarking, setIsMarking] = useState(false);
   const [name, setName] = useState("");
+  const [lang, setLang] = useState<MascotLang>("en");
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
 
-  useEffect(() => {
-    let cancelled = false;
-    getUser().then((user) => {
-      if (!cancelled && user?.name && user.name !== "Friend") {
-        setName(user.name);
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      getUser().then((user) => {
+        if (cancelled) return;
+        if (user?.name && user.name !== "Friend") setName(user.name);
+        if (isMascotLang(user?.mascot_lang)) setLang(user.mascot_lang);
+      });
+      return () => {
+        cancelled = true;
+      };
+    }, []),
+  );
+
+  const messages = useMemo(() => mascotMessages(lang, name), [lang, name]);
 
   const states = useMemo(
     () =>
-      getStates({
-        hero,
-        overdueCount,
-        weekCount,
-        pendingCount: pending.length,
-        name,
-      }),
-    [hero, overdueCount, weekCount, pending.length, name],
+      getStates(
+        {
+          hero,
+          overdueCount,
+          weekCount,
+          pendingCount: pending.length,
+        },
+        messages,
+      ),
+    [hero, overdueCount, weekCount, pending.length, messages],
   );
+
+  const deadlineItems = useMemo(
+    () =>
+      hero
+        ? [hero.item, ...groups.flatMap((g) => g.items.map((e) => e.item))]
+        : [],
+    [hero, groups],
+  );
+
+  const allPicked =
+    deadlineItems.length > 0 && deadlineItems.every((i) => picked.has(i.id));
+
+  const exitSelection = useCallback(() => {
+    setSelecting(false);
+    setPicked(new Set());
+  }, []);
+
+  useEffect(() => {
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (selecting) {
+        exitSelection();
+        return true;
+      }
+      return false;
+    });
+    return () => sub.remove();
+  }, [selecting, exitSelection]);
+
+  const togglePick = (id: string) => {
+    setPicked((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAll = () =>
+    setPicked(allPicked ? new Set() : new Set(deadlineItems.map((i) => i.id)));
+
+  const handlePress = (item: Item) => {
+    if (selecting) togglePick(item.id);
+    else router.push({ pathname: "/item/[id]", params: { id: item.id } });
+  };
+
+  const handleLongPress = (item: Item) => {
+    if (!selecting) {
+      setSelecting(true);
+      setPicked(new Set([item.id]));
+    }
+  };
+
+  const handleMarkDone = async () => {
+    if (isMarking || picked.size === 0) return;
+    setIsMarking(true);
+    try {
+      const ids = Array.from(picked);
+      await markItemsDone(ids, true);
+      await syncReminders();
+      ids.forEach((id) => {
+        queryClient.removeQueries({ queryKey: ["item", id] });
+        queryClient.removeQueries({ queryKey: ["itemFields", id] });
+      });
+      resyncAfterStatusChange();
+      exitSelection();
+    } finally {
+      setIsMarking(false);
+      setShowMarkDone(false);
+    }
+  };
+
+  const pickedTitle = useMemo(() => {
+    const first = deadlineItems.find((i) => picked.has(i.id));
+    return first?.title ?? null;
+  }, [deadlineItems, picked]);
 
   const isEmpty = !hero && pending.length === 0 && groups.length === 0;
   if (isLoading) {
@@ -169,93 +259,128 @@ export default function Home() {
     <View className="flex-1 bg-cream dark:bg-night">
       <Stack.Screen options={{ headerShown: false }} />
 
-      <ScrollView
-        className="flex-1"
-        contentContainerStyle={{
-          paddingBottom: insets.bottom + 128,
-        }}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={refresh}
-            tintColor={brand}
-            colors={[brand]}
-          />
-        }
-        showsVerticalScrollIndicator={false}
+      <View
+        className={`mb-2 pb-1 rounded-b-[40px] px-5 justify-center ${isDark ? "bg-brand-deep" : "bg-brand"}`}
+        style={{ paddingTop: insets.top + 10, minHeight: insets.top + 116 }}
       >
+        <StatusCarousel
+          ids={states.map((s) => s.id)}
+          accessibilityLabels={STATUS_ACCESSIBILITY_LABELS}
+          render={(index) => {
+            const state = states[index];
+            return (
+              <Animated.View
+                key={state.id}
+                entering={FadeIn.duration(260)}
+                exiting={FadeOut.duration(140)}
+              >
+                <MascotHeader message={state.message} mood={state.mood} />
+              </Animated.View>
+            );
+          }}
+        />
+      </View>
+
+      {isEmpty ? (
         <View
-          className={`mb-5 pb-1 rounded-b-[40px] px-5 justify-center ${isDark ? "bg-brand-deep" : "bg-brand"}`}
-          style={{ paddingTop: insets.top + 10, minHeight: insets.top + 116 }}
+          className="flex-1 justify-center px-5"
+          style={{ paddingBottom: insets.bottom + 88 }}
         >
-          <StatusCarousel
-            ids={states.map((s) => s.id)}
-            accessibilityLabels={STATUS_ACCESSIBILITY_LABELS}
-            render={(index) => {
-              const state = states[index];
-              return (
-                <Animated.View
-                  key={state.id}
-                  entering={FadeIn.duration(260)}
-                  exiting={FadeOut.duration(140)}
-                >
-                  <MascotHeader message={state.message} mood={state.mood} />
-                </Animated.View>
-              );
-            }}
-          />
+          <View className="mb-9">
+            <Text className="text-[32px] leading-[38px] font-display text-ink dark:text-ink-dark">
+              <Text className="text-brand">Items</Text> with deadlines will show up here.
+            </Text>
+            <View className="h-4" />
+            <Text className="text-sm font-body-medium text-ink-faint dark:text-ink-faint-dark leading-relaxed">
+              Anything Mochiku saves without a date keeps in Library.
+            </Text>
+          </View>
+
+          <ScanExamples />
         </View>
-
-        {hero && (
-          <View className="px-5 mb-6">
-            <NextUpCard entry={hero} />
-          </View>
-        )}
-
-        {pending.length > 0 && (
-          <View className="mb-8">
-            <SectionHeader
-              title="To Confirm"
-              subtitle="Check the uncertainties from these photos"
+      ) : (
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{
+            paddingBottom: insets.bottom + 128,
+          }}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={refresh}
+              tintColor={brand}
+              colors={[brand]}
             />
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}
-            >
-              {pending.map((item) => (
-                <ReviewCard key={item.id} item={item} />
-              ))}
-            </ScrollView>
-          </View>
-        )}
+          }
+          showsVerticalScrollIndicator={false}
+        >
+          <MarkDoneBar
+            hasItem={markableItems.length > 0}
+            selecting={selecting}
+            pickedCount={picked.size}
+            allPicked={allPicked}
+            onExit={exitSelection}
+            onToggleAll={toggleAll}
+            onConfirm={() => setShowMarkDone(true)}
+          />
 
-        {groups.length > 0 && (
-          <View className="space-y-4">
-            <SectionHeader title="Upcoming" />
-            {groups.map((g) => (
-              <DeadlineGroup key={g.title} title={g.title} items={g.items} />
-            ))}
-          </View>
-        )}
-
-        {!isLoading && isEmpty && (
-          <View
-            className={`mx-5 my-8 p-6 rounded-3xl border border-line dark:border-line-dark items-center justify-center ${isDark ? "bg-paper-dark/60" : "bg-white/70"}`}
-          >
-            <View className="w-12 h-12 rounded-full bg-brand-soft justify-center items-center mb-3">
-              <Ionicons name="calendar-clear-outline" size={22} color={brand} />
+          {hero && (
+            <View className="px-5 mb-6">
+              <NextUpCard
+                entry={hero}
+                selecting={selecting}
+                isPicked={picked.has(hero.item.id)}
+                onPress={() => handlePress(hero.item)}
+                onLongPress={() => handleLongPress(hero.item)}
+              />
             </View>
-            <Text className="text-base font-heading text-ink dark:text-ink-dark text-center mb-1">
-              No deadlines yet
-            </Text>
-            <Text className="text-xs font-body-medium text-ink-faint dark:text-ink-faint-dark text-center max-w-[240px]">
-              Anything you scan that has a due date will show up here. Your
-              other saved items are in the Library.
-            </Text>
-          </View>
-        )}
-      </ScrollView>
+          )}
+
+          {pending.length > 0 && (
+            <View className="mb-8">
+              <SectionHeader
+                title="To Confirm"
+                subtitle="Check the uncertainties from these photos"
+              />
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}
+              >
+                {pending.map((item) => (
+                  <ReviewCard key={item.id} item={item} />
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
+          {groups.length > 0 && (
+            <View className="space-y-4">
+              <SectionHeader title="Upcoming" />
+              {groups.map((g) => (
+                <DeadlineGroup
+                  key={g.title}
+                  title={g.title}
+                  items={g.items}
+                  selecting={selecting}
+                  picked={picked}
+                  onPress={handlePress}
+                  onLongPress={handleLongPress}
+                />
+              ))}
+            </View>
+          )}
+        </ScrollView>
+      )}
+
+      <MarkAsDoneModal
+        visible={showMarkDone}
+        marking={isMarking}
+        count={picked.size}
+        title={pickedTitle}
+        onCancel={() => setShowMarkDone(false)}
+        onConfirm={handleMarkDone}
+      />
     </View>
   );
 }

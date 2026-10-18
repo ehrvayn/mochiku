@@ -1,11 +1,22 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Stack } from "expo-router";
-import { useEffect, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import {
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Mochiku from "../components/Mochiku";
 import { softShadow } from "../constants/tones";
-import { getUser } from "../db/user";
+import { getUser, updateUser } from "../db/user";
+import {
+  isMascotLang,
+  mascotMessages,
+  type MascotLang,
+} from "../constants/i18n";
 import { useThemeColor } from "../theme";
 import { useColorScheme } from "nativewind";
 
@@ -14,23 +25,66 @@ export default function Profile() {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
   const inkFaint = useThemeColor("ink-faint", "#A39DB0");
+  const brandInk = useThemeColor("brand-ink", "#C2531A");
   const [user, setUser] = useState<{
     name: string;
     reminder_time: string;
+    mascot_lang: MascotLang;
   } | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [draftName, setDraftName] = useState("");
+  const [isSavingName, setIsSavingName] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     getUser().then((row) => {
       if (cancelled || !row) return;
-      setUser({ name: row.name, reminder_time: row.reminder_time });
+      setUser({
+        name: row.name,
+        reminder_time: row.reminder_time,
+        mascot_lang: isMascotLang(row.mascot_lang) ? row.mascot_lang : "en",
+      });
     });
     return () => {
       cancelled = true;
     };
   }, []);
 
+  const beginEdit = () => {
+    setDraftName(user?.name ?? "");
+    setEditing(true);
+  };
+
+  const cancelEdit = () => {
+    setEditing(false);
+    setDraftName("");
+  };
+
+  const handleSaveName = async () => {
+    const next = draftName.trim();
+    if (!next || isSavingName) return;
+    setIsSavingName(true);
+    try {
+      await updateUser({ name: next });
+      setUser((prev) => (prev ? { ...prev, name: next } : prev));
+      setEditing(false);
+    } catch (error) {
+      console.log("rename failed:", error);
+    } finally {
+      setIsSavingName(false);
+    }
+  };
+
   const firstName = user?.name?.split(" ")[0] || "Friend";
+
+  // Split around the name so it can keep the display font, in both languages.
+  const [greetBefore, greetAfter] = useMemo(() => {
+    const full = mascotMessages(user?.mascot_lang ?? "en", firstName)
+      .profileGreeting(firstName);
+    const at = full.indexOf(firstName);
+    if (at === -1) return [full, ""];
+    return [full.slice(0, at), full.slice(at + firstName.length)];
+  }, [firstName, user?.mascot_lang]);
 
   // Stored as 24-hour "HH:MM"; shown here as 12-hour, e.g. "9:00 AM".
   const reminderLabel = (() => {
@@ -74,8 +128,9 @@ export default function Profile() {
                 style={softShadow}
               >
                 <Text className="text-sm font-heading text-ink dark:text-ink-dark leading-snug">
-                  Hi, <Text className="font-display">{firstName}.</Text> I'm
-                  Mochiku and I keep your shelf tidy.
+                  {greetBefore}
+                  <Text className="font-display">{firstName}</Text>
+                  {greetAfter}
                 </Text>
                 <View className="absolute -left-2 top-6 w-3 h-3 rotate-45 bg-paper dark:bg-paper-dark border-l border-b border-line dark:border-line-dark" />
               </View>
@@ -85,7 +140,69 @@ export default function Profile() {
 
         <View className="px-5">
           <View className="bg-paper dark:bg-paper-dark rounded-2xl border border-line dark:border-line-dark overflow-hidden">
-            <Row icon="person-outline" label="Name" value={user?.name || "—"} />
+            {editing ? (
+              <View className="px-4 py-4 gap-3">
+                <TextInput
+                  value={draftName}
+                  onChangeText={setDraftName}
+                  autoFocus
+                  returnKeyType="done"
+                  onSubmitEditing={handleSaveName}
+                  placeholder="Your name"
+                  placeholderTextColor={inkFaint}
+                  maxLength={40}
+                  className="text-base font-body-medium text-ink dark:text-ink-dark bg-cream dark:bg-night border border-line dark:border-line-dark rounded-xl px-3 py-2.5"
+                />
+                <View className="flex-row gap-2">
+                  <TouchableOpacity
+                    activeOpacity={0.75}
+                    onPress={cancelEdit}
+                    className="flex-1 py-2.5 rounded-full bg-cream dark:bg-night border border-line dark:border-line-dark items-center"
+                  >
+                    <Text className="text-sm font-body-bold text-ink-soft dark:text-ink-soft-dark">
+                      Cancel
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    disabled={!draftName.trim() || isSavingName}
+                    onPress={handleSaveName}
+                    className={`flex-1 py-2.5 rounded-full items-center ${
+                      !draftName.trim() || isSavingName ? "bg-brand-soft" : "bg-brand"
+                    }`}
+                  >
+                    <Text
+                      className={`text-sm font-body-bold ${
+                        !draftName.trim() || isSavingName ? "text-ink-faint" : "text-cream"
+                      }`}
+                    >
+                      {isSavingName ? "Saving…" : "Save"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : (
+              <TouchableOpacity
+                activeOpacity={0.75}
+                onPress={beginEdit}
+                accessibilityRole="button"
+                accessibilityLabel={`Name, ${user?.name || "not set"}. Tap to change.`}
+                className="px-4 py-4 flex-row items-center justify-between"
+              >
+                <View className="flex-row items-center gap-3">
+                  <Ionicons name="person-outline" size={18} color={brandInk} />
+                  <Text className="text-sm font-body-medium text-ink-soft dark:text-ink-soft-dark">
+                    Name
+                  </Text>
+                </View>
+                <View className="flex-row items-center gap-2">
+                  <Text className="text-sm font-body-bold text-ink dark:text-ink-dark">
+                    {user?.name || "—"}
+                  </Text>
+                  <Ionicons name="pencil-outline" size={14} color={inkFaint} />
+                </View>
+              </TouchableOpacity>
+            )}
             <View className="h-px bg-line dark:bg-line-dark" />
             <Row
               icon="time-outline"

@@ -2,7 +2,8 @@ import Constants, { ExecutionEnvironment } from "expo-constants";
 import * as Device from "expo-device";
 import { Platform } from "react-native";
 import { getRemindableItems } from "../db/items";
-import { ensureLocalUser } from "../db/user";
+import { ensureLocalUser, parseNotifyCategories } from "../db/user";
+import { getCategory } from "../constants/categories";
 
 const isExpoGo =
   Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
@@ -92,11 +93,17 @@ async function runSync() {
 
   await Notifications.cancelAllScheduledNotificationsAsync();
 
-  const items = await getRemindableItems();
-  const now = new Date();
-
   const user = await ensureLocalUser();
   const { hour, minute } = parseReminderTime(user?.reminder_time);
+
+  // Done items are already excluded by getRemindableItems. The category filter
+  // is applied here, after the cancel-all, so unchecking a category drops its
+  // pending reminders as well as stopping future ones.
+  const allowed = parseNotifyCategories(user?.notify_categories);
+  const items = (await getRemindableItems()).filter(
+    (item) => allowed === null || allowed.has(getCategory(item.category).label),
+  );
+  const now = new Date();
 
   const REMINDERS = [
     { suffix: "eve", daysBefore: 1, title: "Due tomorrow" },

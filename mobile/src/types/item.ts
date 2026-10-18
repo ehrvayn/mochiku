@@ -17,6 +17,7 @@ export interface Item {
   status: ItemStatus;
   deadline_at: string | null;
   deadline_confirmed_at: string | null;
+  mark_as_done: number;
   sync_status: SyncStatus;
   created_at: string;
   updated_at: string;

@@ -1,22 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Stack } from "expo-router";
-import { useEffect, useState } from "react";
-import {
-  Platform,
-  Switch,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Platform, Switch, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { updateUser, getUser } from "../db/user";
-import {
-  isDarkPreferred,
-  storeAppearance,
-  useThemeColor,
-} from "../theme";
-import { useColorScheme } from "nativewind";
+import { updateUser, getUser, parseNotifyCategories } from "../db/user";
+import CategoryFilterChips from "../components/settings/CategoryFilterChips";
+import { isMascotLang, MASCOT_LANGS, type MascotLang } from "../constants/i18n";
+import { syncReminders } from "../services/notifications";
+import { isDarkPreferred, storeAppearance, useThemeColor } from "../theme";
 import {
   beginThemeToggleProbe,
   endThemeToggleProbe,
@@ -41,15 +33,26 @@ export default function Settings() {
   const [saved, setSaved] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
   const [dark, setDark] = useState(isDarkPreferred);
+  const [categories, setCategories] = useState<Set<string> | null>(null);
+  const [lang, setLang] = useState<MascotLang>("en");
   const brandColor = useThemeColor("brand", "#FF8A4C");
   const brandInk = useThemeColor("brand-ink", "#C2531A");
   const lineColor = useThemeColor("line", "#F0E4CF");
-  const paper = useThemeColor("paper", "#FFFFFF");
+  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (savedTimer.current) clearTimeout(savedTimer.current);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
     getUser().then((user) => {
-      if (!cancelled && user) setTime(parseHHMM(user.reminder_time));
+      if (cancelled || !user) return;
+      setTime(parseHHMM(user.reminder_time));
+      setCategories(parseNotifyCategories(user.notify_categories));
+      if (isMascotLang(user.mascot_lang)) setLang(user.mascot_lang);
     });
     return () => {
       cancelled = true;
@@ -67,8 +70,16 @@ export default function Settings() {
   };
 
   const handleSave = async () => {
-    await updateUser({ reminder_time: toHHMM(time) });
+    await updateUser({
+      reminder_time: toHHMM(time),
+      notify_categories: categories === null ? null : [...categories],
+      mascot_lang: lang,
+    });
+    await syncReminders();
+
     setSaved(true);
+    if (savedTimer.current) clearTimeout(savedTimer.current);
+    savedTimer.current = setTimeout(() => setSaved(false), 1000);
   };
 
   const handleDarkChange = (next: boolean) => {
@@ -83,13 +94,24 @@ export default function Settings() {
       <Stack.Screen options={{ headerShown: false }} />
 
       <View
-        className="mb-6 rounded-b-[50px] px-5 bg-brand dark:bg-brand-deep"
-        style={{ paddingTop: insets.top + 16, paddingBottom: 28 }}
+        className="mb-6 flex flex-row justify-between rounded-b-[50px] px-8 bg-brand dark:bg-brand-deep"
+        style={{ paddingTop: insets.top + 14, paddingBottom: 20 }}
       >
-        <Text className="text-3xl font-display text-white">Settings</Text>
-        <Text className="text-xs font-body-medium text-white/80">
-          How Mochiku should behave
-        </Text>
+        <View>
+          <Text className="text-3xl font-display text-white">Settings</Text>
+          <Text className="text-xs font-body-medium text-white/80">
+            How Mochiku should behave
+          </Text>
+        </View>
+        <TouchableOpacity
+          onPress={handleSave}
+          activeOpacity={0.85}
+          className="p-4 rounded-full bg-white dark:bg-brand-deep items-center"
+        >
+          <Text className="text-brand font-heading text-base">
+            {saved ? "Saved" : "Save"}
+          </Text>
+        </TouchableOpacity>
       </View>
 
       <View
@@ -155,19 +177,53 @@ export default function Settings() {
           />
         )}
 
-        <TouchableOpacity
-          onPress={handleSave}
-          activeOpacity={0.85}
-          className="mt-4 w-full py-4 rounded-full bg-brand dark:bg-brand-deep items-center"
-        >
-          <Text className="text-white font-heading text-base">
-            {saved ? "Saved" : "Save"}
-          </Text>
-        </TouchableOpacity>
+        <Text className="text-xs font-body-bold text-brand-ink dark:text-brand mt-5 mb-2">
+          Remind me about
+        </Text>
+        <View className="mb-6">
+          <CategoryFilterChips
+            selected={categories}
+            onChange={(next) => {
+              setCategories(next);
+              setSaved(false);
+            }}
+          />
+        </View>
 
-        <Text className="text-xs font-body text-ink-faint dark:text-ink-faint-dark mt-4">
-          Mochiku nudges you on this time each day while something is still
-          open.
+        <Text className="text-xs font-body-bold text-brand-ink dark:text-brand mb-2">
+          Mochiku's language
+        </Text>
+        <View className="bg-paper dark:bg-paper-dark rounded-2xl border border-line dark:border-line-dark overflow-hidden mb-6">
+          {MASCOT_LANGS.map((l, i) => (
+            <View key={l.code}>
+              {i > 0 && <View className="h-px bg-line dark:bg-line-dark" />}
+              <TouchableOpacity
+                activeOpacity={0.75}
+                onPress={() => {
+                  setLang(l.code);
+                  setSaved(false);
+                }}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: lang === l.code }}
+                className="px-4 py-3.5 flex-row items-center justify-between"
+              >
+                <Text className="text-base font-body-medium text-ink dark:text-ink-dark">
+                  {l.label}
+                </Text>
+                {lang === l.code && (
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={20}
+                    color={brandInk}
+                  />
+                )}
+              </TouchableOpacity>
+            </View>
+          ))}
+        </View>
+        <Text className="text-xs font-body text-ink-faint dark:text-ink-faint-dark mb-6">
+          This changes what Mochiku says when he greets you. The rest of the app
+          stays in English.
         </Text>
       </View>
     </View>

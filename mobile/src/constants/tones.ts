@@ -1,12 +1,13 @@
 export type Tone = {
   key: "urgent" | "soon" | "calm";
   label: string;
-  box: string; 
-  text: string; 
-  bar: string; 
-  hero: string; 
+  box: string;
+  text: string;
+  bar: string;
+  hero: string;
   heroText: string;
   heroSub: string;
+  isOverdue: boolean;
 };
 
 const STYLES = {
@@ -42,15 +43,19 @@ const STYLES = {
 export function getTone(days: number): Tone {
   const label =
     days < 0
-      ? `Overdue by ${-days} ${-days === 1 ? "day" : "days"}`
+      ? `${-days} ${-days === 1 ? "day" : "days"}`
       : days === 0
         ? "Due today"
         : days === 1
           ? "Due tomorrow"
           : `${days}`;
 
-  const style = days <= 1 ? STYLES.urgent : days <= 7 ? STYLES.soon : STYLES.calm;
-  return { ...style, label };
+  const style =
+    days <= 1 ? STYLES.urgent : days <= 7 ? STYLES.soon : STYLES.calm;
+
+  const isOverdue = days < 0;
+
+  return { ...style, label, isOverdue };
 }
 
 export const softShadow = {

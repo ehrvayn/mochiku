@@ -9,7 +9,14 @@ import { Item } from "../../types/item";
 import Mochiku, { Mood } from "../Mochiku";
 import { ReactNode } from "react";
 
-const openItem = (id: string) =>
+export type PickableProps = {
+  selecting?: boolean;
+  isPicked?: boolean;
+  onPress: () => void;
+  onLongPress: () => void;
+};
+
+export const openItem = (id: string) =>
   router.push({ pathname: "/item/[id]", params: { id } });
 
 const shortDate = (iso: string) =>
@@ -60,7 +67,15 @@ export function MascotHeader({
   );
 }
 
-export function NextUpCard({ entry }: { entry: DeadlineEntry }) {
+export function NextUpCard({
+  entry,
+  selecting,
+  isPicked,
+  onPress,
+  onLongPress,
+}: {
+  entry: DeadlineEntry;
+} & PickableProps) {
   const { item, days } = entry;
   const tone = getTone(days);
   const word = days === 0 ? "Today" : days === 1 ? "Tomorrow" : String(days);
@@ -68,25 +83,35 @@ export function NextUpCard({ entry }: { entry: DeadlineEntry }) {
   return (
     <TouchableOpacity
       activeOpacity={0.9}
-      onPress={() => openItem(item.id)}
+      onPress={onPress}
+      onLongPress={onLongPress}
+      delayLongPress={300}
       className="flex-row bg-paper dark:bg-paper-dark border border-line dark:border-line-dark rounded-3xl overflow-hidden"
       style={softShadow}
     >
       <View
         className={`w-28 items-center bg-brand justify-center py-5 px-3 ${tone.hero}`}
       >
-        <Text
-          className={`font-display ${tone.heroText} ${
-            days > 1 ? "text-3xl" : "text-base"
-          }`}
-          numberOfLines={1}
-        >
-          {word}
-        </Text>
-        {days > 1 && (
-          <Text className={`text-xs font-body-bold mt-0.5 ${tone.heroSub}`}>
-            days left
-          </Text>
+        {selecting && isPicked ? (
+          <View className="w-11 h-11 rounded-full bg-brand items-center justify-center">
+            <Ionicons name="checkmark" size={24} color="#fff" />
+          </View>
+        ) : (
+          <>
+            <Text
+              className={`font-display ${tone.heroText} ${
+                days > 1 ? "text-3xl" : "text-base"
+              }`}
+              numberOfLines={1}
+            >
+              {word}
+            </Text>
+            {days > 1 && (
+              <Text className={`text-xs font-body-bold mt-0.5 ${tone.heroSub}`}>
+                days left
+              </Text>
+            )}
+          </>
         )}
       </View>
 
@@ -174,30 +199,46 @@ export function ReviewCard({ item }: { item: Item }) {
 function DeadlineRow({
   entry,
   first,
+  selecting,
+  isPicked,
+  onPress,
+  onLongPress,
 }: {
   entry: DeadlineEntry;
   first: boolean;
-}) {
+} & PickableProps) {
   const { item, days } = entry;
   const date = new Date(item.deadline_at!);
   const tone = getTone(days);
+  const picked = !!selecting && !!isPicked;
 
   return (
     <TouchableOpacity
       activeOpacity={0.7}
-      onPress={() => openItem(item.id)}
+      onPress={onPress}
+      onLongPress={onLongPress}
+      delayLongPress={300}
       className={`flex-row items-center gap-4 px-4 py-3.5 ${
-        first ? "" : "border-t border-line/60 dark:border-line-dark/60"
-      }`}
+        picked ? "bg-brand-soft" : ""
+      } ${first ? "" : "border-t border-line/60 dark:border-line-dark/60"}`}
     >
-      <View className="w-11 items-center justify-center bg-cream/80 dark:bg-night/80 py-1.5 rounded-2xl border border-line/40 dark:border-line-dark/40">
-        <Text className="text-[10px] font-body-bold text-ink-faint dark:text-ink-faint-dark uppercase">
-          {MONTHS[date.getMonth()]}
-        </Text>
-        <Text className="text-lg font-display text-ink dark:text-ink-dark leading-tight">
-          {date.getDate()}
-        </Text>
-      </View>
+
+      {picked ? (
+        <View className="w-11 h-11 items-center justify-center">
+          <View className="w-7 h-7 rounded-full bg-brand items-center justify-center">
+            <Ionicons name="checkmark" size={16} color="#fff" />
+          </View>
+        </View>
+      ) : (
+        <View className="w-11 items-center justify-center bg-cream/80 dark:bg-night/80 py-1.5 rounded-2xl border border-line/40 dark:border-line-dark/40">
+          <Text className="text-[10px] font-body-bold text-ink-faint dark:text-ink-faint-dark uppercase">
+            {MONTHS[date.getMonth()]}
+          </Text>
+          <Text className="text-lg font-display text-ink dark:text-ink-dark leading-tight">
+            {date.getDate()}
+          </Text>
+        </View>
+      )}
 
       <View className="flex-1 flex-col items-start gap-1">
         <Text
@@ -211,10 +252,19 @@ function DeadlineRow({
       <View className="h-full w-px bg-gray-800/20" />
 
       <View className="flex flex-col items-center">
+        {tone.isOverdue && (
+          <Text className={`text-xs font-body-bold ${tone.text}`}>
+            Overdue by
+          </Text>
+        )}
         <Text className={`text-lg font-body-bold ${tone.text}`}>
           {tone.label}
         </Text>
-        <Text className={`text-xs font-body-bold ${tone.text}`}>days left</Text>
+        {!tone.isOverdue && (
+          <Text className={`text-xs font-body-bold ${tone.text}`}>
+            days left
+          </Text>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -223,9 +273,17 @@ function DeadlineRow({
 export function DeadlineGroup({
   title,
   items,
+  selecting,
+  picked,
+  onPress,
+  onLongPress,
 }: {
   title: string;
   items: DeadlineEntry[];
+  selecting?: boolean;
+  picked: Set<string>;
+  onPress: (item: Item) => void;
+  onLongPress: (item: Item) => void;
 }) {
   return (
     <View className="px-5 mb-5">
@@ -243,7 +301,15 @@ export function DeadlineGroup({
         style={softShadow}
       >
         {items.map((e, i) => (
-          <DeadlineRow key={e.item.id} entry={e} first={i === 0} />
+          <DeadlineRow
+            key={e.item.id}
+            entry={e}
+            first={i === 0}
+            selecting={selecting}
+            isPicked={picked.has(e.item.id)}
+            onPress={() => onPress(e.item)}
+            onLongPress={() => onLongPress(e.item)}
+          />
         ))}
       </View>
     </View>
