@@ -1,7 +1,7 @@
 import { useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { Item } from "../types/item";
-import { HOME_KEY, refreshHome, type HomeData } from "../store/appCache";
+import { SCHEDULE_KEY, refreshSchedule, type ScheduleData } from "../store/appCache";
 import { useCacheEntry } from "../store/cache";
 import { markItemsDone } from "@/db/items";
 
@@ -30,12 +30,12 @@ export type DeadlineEntry = { item: Item; days: number };
 
 const EMPTY: Item[] = [];
 
-export function useHomeData() {
-  const { data, settled } = useCacheEntry<HomeData>(HOME_KEY);
+export function useScheduleData() {
+  const { data, settled } = useCacheEntry<ScheduleData>(SCHEDULE_KEY);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
-    await refreshHome();
+    await refreshSchedule();
   }, []);
 
   useFocusEffect(
@@ -65,8 +65,10 @@ export function useHomeData() {
       overdueCount: entries.filter((e) => e.days < 0).length,
       weekCount: entries.filter((e) => e.days >= 0 && e.days <= 7).length,
       groups: [
+        // "Next 7 days", not "This week": the week strip above already uses
+        // that label for the calendar week, and these are different spans.
         {
-          title: "This week",
+          title: "Next 7 days",
           items: rest.filter((e) => e.days >= 0 && e.days <= 7),
         },
         { title: "Later", items: rest.filter((e) => e.days > 7) },

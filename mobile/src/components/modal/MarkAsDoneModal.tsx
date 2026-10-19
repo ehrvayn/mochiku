@@ -54,8 +54,8 @@ export default function MarkAsDoneModal({
             )}
             <Text className="text-xs text-ink-faint dark:text-ink-faint-dark text-center">
               {plural
-                ? "They will leave your home list and stop reminding you."
-                : "It will leave your home list and stop reminding you."}
+                ? "They will leave your schedule list and stop reminding you."
+                : "It will leave your schedule list and stop reminding you."}
             </Text>
           </View>
 

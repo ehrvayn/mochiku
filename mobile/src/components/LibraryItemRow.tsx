@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 import { getCategory, useCategoryColors } from "../constants/categories";
 import { getTone } from "../constants/tones";
-import { daysUntil } from "../hooks/useHomeData";
+import { daysUntil } from "../hooks/useScheduleData";
 import { useThemeColor } from "../theme";
 import { Item } from "../types/item";
 

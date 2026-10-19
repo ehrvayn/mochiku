@@ -2,27 +2,37 @@ import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Skeleton, { SkeletonCircle, SkeletonLines } from "../ui/Skeleton";
 
-/**
- * Home skeleton. Each block mirrors the real element it stands in for so the
- * swap to loaded content does not shift the layout.
- */
-export default function HomeSkeleton({ isDark }: { isDark: boolean }) {
+export default function ScheduleSkeleton({ isDark }: { isDark: boolean }) {
   const insets = useSafeAreaInsets();
 
   return (
     <View className="flex-1 bg-cream dark:bg-night">
       <View
-        className={`mb-6 pb-6 rounded-b-[50px] px-5 ${
+        className={`mb-2 pb-1 rounded-b-[36px] px-5 ${
           isDark ? "bg-brand-deep" : "bg-brand"
         }`}
-        style={{ paddingTop: insets.top + 16, minHeight: insets.top + 140 }}
+        style={{ paddingTop: insets.top + 6, minHeight: insets.top + 120 }}
       >
         <View className="flex-row items-center">
-          <SkeletonCircle size={110} />
+          <SkeletonCircle size={74} />
           <View className="flex-1 rounded-3xl p-4 ml-2 bg-paper border border-line">
             <SkeletonLines count={3} />
           </View>
         </View>
+      </View>
+
+      <View className="px-5 mb-4">
+        <Skeleton className="h-3 w-20 rounded-full" />
+        <View className="flex-row justify-between mt-3">
+          {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+            <View key={i} className="items-center gap-1.5">
+              <Skeleton className="h-2 w-3 rounded-full" />
+              <Skeleton className="w-10 h-10 rounded-full" />
+              <Skeleton className="h-1.5 w-1.5 rounded-full" />
+            </View>
+          ))}
+        </View>
+        <Skeleton className="h-20 rounded-3xl mt-3" />
       </View>
 
       <View className="px-5 mb-6">

@@ -6,8 +6,7 @@ import { softShadow } from "../constants/tones";
 import { useThemeColor } from "../theme";
 import { useColorScheme } from "nativewind";
 
-
-const VISIBLE_ON = ["/home", "/library", "/profile", "/settings"];
+const VISIBLE_ON = ["/schedule", "/library", "/profile", "/settings"];
 
 function NavItem({
   active,
@@ -45,11 +44,13 @@ export default function FloatingNav() {
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
   const brandInk = useThemeColor("brand-ink", "#C2531A");
-  const cream = useThemeColor("cream", "#FFF8EC");
   const { colorScheme } = useColorScheme();
 
   const navActive = "white";
-  const navIdle = colorScheme === "dark" ? "rgba(245, 235, 222, 0.55)" : "rgba(255, 248, 236, 0.55)";
+  const navIdle =
+    colorScheme === "dark"
+      ? "rgba(245, 235, 222, 0.55)"
+      : "rgba(255, 248, 236, 0.55)";
 
   if (!VISIBLE_ON.includes(pathname)) return null;
 
@@ -59,21 +60,15 @@ export default function FloatingNav() {
       style={{ bottom: insets.bottom + 12, height: 88 }}
       className="absolute left-5 right-5"
     >
-      <View className={`absolute bottom-0 left-2 right-2 h-16 rounded-full border border-brand-deep/20 ${colorScheme === "dark" ? "bg-brand-deep" : "bg-brand"}`} />
+      <View
+        className={`absolute bottom-0 left-2 right-2 h-16 rounded-full border border-brand-deep/20 ${colorScheme === "dark" ? "bg-brand-deep" : "bg-brand"}`}
+      />
 
       <View
         pointerEvents="box-none"
         className="absolute inset-0 flex-row items-end justify-between px-8"
       >
         <View className="flex-row items-end gap-3">
-          <NavItem
-            active={pathname === "/home"}
-            activeIcon="home"
-            idleIcon="home"
-            activeColor={navActive}
-            idleColor={navIdle}
-            onPress={() => pathname !== "/home" && router.navigate("/home")}
-          />
           <NavItem
             active={pathname === "/library"}
             activeIcon="albums"
@@ -82,6 +77,16 @@ export default function FloatingNav() {
             idleColor={navIdle}
             onPress={() =>
               pathname !== "/library" && router.navigate("/library")
+            }
+          />
+          <NavItem
+            active={pathname === "/schedule"}
+            activeIcon="calendar"
+            idleIcon="calendar"
+            activeColor={navActive}
+            idleColor={navIdle}
+            onPress={() =>
+              pathname !== "/schedule" && router.navigate("/schedule")
             }
           />
         </View>

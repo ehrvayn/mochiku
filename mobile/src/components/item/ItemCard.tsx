@@ -2,7 +2,7 @@ import { router } from "expo-router";
 import { Text, TouchableOpacity, View } from "react-native";
 import { getCategory, useCategoryColors } from "../../constants/categories";
 import { getTone } from "../../constants/tones";
-import { daysUntil } from "../../hooks/useHomeData";
+import { daysUntil } from "../../hooks/useScheduleData";
 import { Item } from "../../types/item";
 
 const STATUS_LABELS: Record<string, string> = {

@@ -41,13 +41,8 @@ import { Item } from "../types/item";
 import { useColorScheme } from "nativewind";
 import LibrarySkeleton from "../components/library/LibrarySkeleton";
 
-/** Polling cadence while the Drafts tab is open, so finished uploads move
- *  from Drafts to Saved without a manual pull-to-refresh. Kept relaxed: this
- *  loop is the app's main source of request pressure, and rate-limit backoff
- *  lives in services/cooldown.ts. */
 const DRAFTS_POLL_MS = 15000;
 
-/** Stable empty array so derived memos below do not churn. */
 const EMPTY_ITEMS: Item[] = [];
 
 export default function Library() {
@@ -69,8 +64,6 @@ export default function Library() {
   const [showDelete, setShowDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // True only until the very first load settles; false immediately when the
-  // cache is already warm from a previous visit.
   const isLoading = !settled;
   const items = cachedItems ?? EMPTY_ITEMS;
 
@@ -92,14 +85,12 @@ export default function Library() {
 
   useFocusEffect(
     useCallback(() => {
-      // Diagnostic: measure the cost of this screen's color subscriptions.
       beginThemeToggleProbe(`library focus (${items.length} items)`);
       load();
       processPendingUploads().then((count) => {
         if (count > 0) load();
       });
       const sub = BackHandler.addEventListener("hardwareBackPress", () => {
-        // Selection mode only exists on the Saved tab.
         if (selecting) {
           exitSelection();
           return true;
@@ -114,13 +105,9 @@ export default function Library() {
     endThemeToggleProbe();
   }, [items.length]);
 
-  // Keep retrying pending uploads while the Drafts tab is open. The interval
-  // is torn down as soon as the tab changes, so it only ever runs on Drafts.
   useEffect(() => {
     if (tab !== "drafts") return;
     const id = setInterval(() => {
-      // Reload regardless of the result: the item may have finished on the
-      // server without this client being the one to observe the transition.
       processPendingUploads().finally(() => load());
     }, DRAFTS_POLL_MS);
     return () => clearInterval(id);
@@ -187,7 +174,6 @@ export default function Library() {
         queryClient.removeQueries({ queryKey: ["item", id] });
         queryClient.removeQueries({ queryKey: ["itemFields", id] });
       });
-      // Drop them from the cache now so a refocus cannot show deleted rows.
       removeFromLibraryCache(ids);
       await load();
       exitSelection();
@@ -335,8 +321,6 @@ export default function Library() {
               />
             )
           }
-          // Never reached while loading: the skeleton short-circuits above,
-          // so an empty list here is always genuinely empty.
           renderItem={({ item }) =>
             onDrafts ? (
               <View style={{ width: cardWidth }}>

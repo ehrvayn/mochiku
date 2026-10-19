@@ -19,7 +19,7 @@ import {
   updateItemField,
   updateItemStatus,
 } from "../../db/items";
-import { daysUntil } from "../../hooks/useHomeData";
+import { daysUntil } from "../../hooks/useScheduleData";
 import {
   removeFromLibraryCache,
   resyncAfterStatusChange,
@@ -155,7 +155,7 @@ export default function Review() {
         queryClient.invalidateQueries({ queryKey: ["itemFields", id] }),
       ]);
       // Status just changed, so this item moves between Library's Saved and
-      // Drafts tabs and may enter Home's upcoming list.
+      // Drafts tabs and may enter Schedule's upcoming list.
       resyncAfterStatusChange();
       await syncReminders();
       setIsEditing(false);

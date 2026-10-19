@@ -3,7 +3,7 @@ import { router } from "expo-router";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 import { getCategory, useCategoryColors } from "../../constants/categories";
 import { getTone, softShadow } from "../../constants/tones";
-import { DeadlineEntry, MONTHS } from "../../hooks/useHomeData";
+import { DeadlineEntry, MONTHS } from "../../hooks/useScheduleData";
 import { useThemeColor } from "../../theme";
 import { Item } from "../../types/item";
 import Mochiku, { Mood } from "../Mochiku";
@@ -50,7 +50,7 @@ export function MascotHeader({
   return (
     <View className="flex-row gap-2 items-center">
       <View className="items-center justify-center">
-        <Mochiku mood={mood} height={92} width={86} />
+        <Mochiku mood={mood} height={74} width={70} />
       </View>
       <View className="flex-1 justify-center">
         <View
@@ -90,7 +90,7 @@ export function NextUpCard({
       style={softShadow}
     >
       <View
-        className={`w-28 items-center bg-brand justify-center py-5 px-3 ${tone.hero}`}
+        className={`w-24 items-center bg-brand justify-center py-4 px-2 ${tone.hero}`}
       >
         {selecting && isPicked ? (
           <View className="w-11 h-11 rounded-full bg-brand items-center justify-center">
@@ -115,17 +115,17 @@ export function NextUpCard({
         )}
       </View>
 
-      <View className="flex-1 p-4 justify-center gap-2">
-        <Text className="text-[11px] font-body-bold text-ink-faint dark:text-ink-faint-dark uppercase tracking-wider">
+      <View className="flex-1 px-3.5 py-3.5 justify-center gap-1.5">
+        <Text className="text-[10px] font-body-bold text-ink-faint dark:text-ink-faint-dark uppercase tracking-wider">
           Next up
         </Text>
         <Text
-          className="text-base font-heading text-ink dark:text-ink-dark"
+          className="text-[15px] font-heading text-ink dark:text-ink-dark leading-snug"
           numberOfLines={2}
         >
           {item.title ?? "Untitled"}
         </Text>
-        <View className="flex-row items-center justify-between pt-1">
+        <View className="flex-row items-center justify-between pt-0.5">
           <Text className="text-xs font-body-medium text-ink-soft dark:text-ink-soft-dark">
             {shortDate(item.deadline_at!)}
           </Text>

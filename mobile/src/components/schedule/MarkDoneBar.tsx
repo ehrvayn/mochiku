@@ -3,7 +3,6 @@ import { Text, TouchableOpacity, View } from "react-native";
 import { useThemeColor } from "../../theme";
 
 type Props = {
-  hasItem: boolean;
   selecting: boolean;
   pickedCount: number;
   allPicked: boolean;
@@ -13,7 +12,6 @@ type Props = {
 };
 
 export default function MarkDoneBar({
-  hasItem,
   selecting,
   pickedCount,
   allPicked,
@@ -23,18 +21,10 @@ export default function MarkDoneBar({
 }: Props) {
   const brandInk = useThemeColor("brand-ink", "#C2531A");
 
-  // Nothing to mark and not currently marking: render nothing at all, rather
-  // than falling through to the action bar.
-  if (!selecting) {
-    if (!hasItem) return null;
-    return (
-      <View className="px-5 mb-2 self-center">
-        <Text className="text-xs font-body-bold text-ink-faint dark:text-ink-faint">
-          Long press items to mark as done.
-        </Text>
-      </View>
-    );
-  }
+  // Outside selection mode the bar has nothing to show. The long-press
+  // hint used to live here as a standalone line between cards, which read as
+  // an orphan; selection is now discovered by long-pressing a row.
+  if (!selecting) return null;
 
   return (
     <View className="px-5 mb-4">

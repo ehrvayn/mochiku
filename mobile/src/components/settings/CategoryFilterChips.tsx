@@ -33,7 +33,7 @@ export default function CategoryFilterChips({ selected, onChange }: Props) {
         {allOn
           ? "Choose what categories you want Mochiku to remind you."
           : chosen.size === 0
-            ? "No reminders will be scheduled. Your deadlines still show up on Home."
+            ? "No reminders will be scheduled. Your deadlines still show up on Schedule."
             : `Only ${[...chosen].join(", ")} will remind you.`}
       </Text>
       <View className="flex-row flex-wrap gap-2">

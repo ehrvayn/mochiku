@@ -147,8 +147,6 @@ export default function CameraScreen() {
   const [zoom, setZoom] = useState(0);
   const [cooling, setCooling] = useState(false);
   const zoomStart = useRef(0);
-  // Captures can overlap, so an older request must not clear a newer capture's
-  // popup. Only the most recent request owns the status.
   const latestCapture = useRef(0);
 
   const pinch = Gesture.Pinch()
@@ -163,8 +161,6 @@ export default function CameraScreen() {
 
   useEffect(() => {
     getNotificationPermissionStatus().then(setNotifStatus);
-    // Open the camera already probing, so the host is waking in the background
-    // while the user lines up their first photo.
     warmServer();
   }, []);
 
@@ -172,7 +168,6 @@ export default function CameraScreen() {
     const sub = AppState.addEventListener("change", (state) => {
       if (state === "active") {
         getPermission();
-        // Same reasoning as mount: resume with the host already waking.
         warmServer();
         getNotificationPermissionStatus().then((s) => {
           setNotifStatus(s);
@@ -217,8 +212,6 @@ export default function CameraScreen() {
   }
 
   const busy = status === "processing";
-  // Only the tap-cooldown locks the shutter. A read in flight must not, since
-  // every capture is its own draft row and nothing is shared or at risk.
   const locked = cooling;
 
   const finishCapture = (id: number) => {
@@ -244,8 +237,6 @@ export default function CameraScreen() {
 
     setStatus("processing");
 
-    // Fire-and-forget: if the host is asleep this starts waking it while the
-    // capture below proceeds. By the time a poller pass runs, it is likely up.
     warmServer();
 
     try {
@@ -337,10 +328,10 @@ export default function CameraScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             activeOpacity={0.7}
-            onPress={() => router.push("/home")}
+            onPress={() => router.push("/library")}
             className="w-14 h-14 rounded-2xl bg-black/40 border border-white/30 items-center justify-center"
           >
-            <Ionicons name="home-outline" size={20} color="#fff" />
+            <Ionicons name="home" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
 

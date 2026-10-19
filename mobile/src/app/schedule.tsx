@@ -13,16 +13,16 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQueryClient } from "@tanstack/react-query";
 import { Mood } from "../components/Mochiku";
 import MarkAsDoneModal from "../components/modal/MarkAsDoneModal";
-import MarkDoneBar from "../components/home/MarkDoneBar";
-import ScanExamples from "../components/home/ScanExamples";
+import MarkDoneBar from "../components/schedule/MarkDoneBar";
+import ScanExamples from "../components/schedule/ScanExamples";
 import {
   DeadlineGroup,
   MascotHeader,
   NextUpCard,
   ReviewCard,
   SectionHeader,
-} from "../components/home/HomeParts";
-import { DeadlineEntry, useHomeData } from "../hooks/useHomeData";
+} from "../components/schedule/ScheduleParts";
+import { DeadlineEntry, useScheduleData } from "../hooks/useScheduleData";
 import { markItemsDone } from "../db/items";
 import { syncReminders } from "../services/notifications";
 import { resyncAfterStatusChange } from "../store/appCache";
@@ -33,8 +33,9 @@ import {
   type MascotLang,
   type MascotMessages,
 } from "../constants/i18n";
-import HomeSkeleton from "../components/home/HomeSkeleton";
-import StatusCarousel from "../components/home/StatusCarousel";
+import ScheduleSkeleton from "../components/schedule/ScheduleSkeleton";
+import StatusCarousel from "../components/schedule/StatusCarousel";
+import WeekStrip from "../components/schedule/WeekStrip";
 import { useThemeColor } from "../theme";
 import { useColorScheme } from "nativewind";
 import { ReactNode } from "react";
@@ -116,10 +117,11 @@ function getStates(
   return states;
 }
 
-export default function Home() {
+export default function Schedule() {
   const insets = useSafeAreaInsets();
   const {
     pending,
+    upcoming,
     hero,
     groups,
     overdueCount,
@@ -127,8 +129,7 @@ export default function Home() {
     refreshing,
     refresh,
     isLoading,
-    markableItems,
-  } = useHomeData();
+  } = useScheduleData();
   const brand = useThemeColor("brand", "#FF8A4C");
   const queryClient = useQueryClient();
   const [selecting, setSelecting] = useState(false);
@@ -250,7 +251,7 @@ export default function Home() {
     return (
       <>
         <Stack.Screen options={{ headerShown: false }} />
-        <HomeSkeleton isDark={isDark} />
+        <ScheduleSkeleton isDark={isDark} />
       </>
     );
   }
@@ -260,8 +261,8 @@ export default function Home() {
       <Stack.Screen options={{ headerShown: false }} />
 
       <View
-        className={`mb-2 pb-1 rounded-b-[40px] px-5 justify-center ${isDark ? "bg-brand-deep" : "bg-brand"}`}
-        style={{ paddingTop: insets.top + 10, minHeight: insets.top + 116 }}
+        className={`mb-2 pb-1 rounded-b-[36px] px-5 justify-center ${isDark ? "bg-brand-deep" : "bg-brand"}`}
+        style={{ paddingTop: insets.top + 6, minHeight: insets.top + 86 }}
       >
         <StatusCarousel
           ids={states.map((s) => s.id)}
@@ -281,97 +282,93 @@ export default function Home() {
         />
       </View>
 
-      {isEmpty ? (
-        <View
-          className="flex-1 justify-center px-5"
-          style={{ paddingBottom: insets.bottom + 88 }}
-        >
-          <View className="mb-9">
-            <Text className="text-[32px] leading-[38px] font-display text-ink dark:text-ink-dark">
-              <Text className="text-brand">Items</Text> with deadlines will show up here.
-            </Text>
-            <View className="h-4" />
-            <Text className="text-sm font-body-medium text-ink-faint dark:text-ink-faint-dark leading-relaxed">
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{
+          paddingBottom: insets.bottom + 128,
+          flexGrow: 1,
+        }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={refresh}
+            tintColor={brand}
+            colors={[brand]}
+          />
+        }
+        showsVerticalScrollIndicator={false}
+      >
+        <WeekStrip items={upcoming} disabled={selecting} />
+
+        {isEmpty ? (
+          <View className="flex-1 justify-center px-5 pb-24">
+
+
+            <ScanExamples />
+            <Text className="text-xs self-center mt-4 text-center font-body-medium text-ink-faint dark:text-ink-faint-dark leading-relaxed">
               Anything Mochiku saves without a date keeps in Library.
             </Text>
           </View>
+        ) : (
+          <View>
 
-          <ScanExamples />
-        </View>
-      ) : (
-        <ScrollView
-          className="flex-1"
-          contentContainerStyle={{
-            paddingBottom: insets.bottom + 128,
-          }}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={refresh}
-              tintColor={brand}
-              colors={[brand]}
+            <MarkDoneBar
+              selecting={selecting}
+              pickedCount={picked.size}
+              allPicked={allPicked}
+              onExit={exitSelection}
+              onToggleAll={toggleAll}
+              onConfirm={() => setShowMarkDone(true)}
             />
-          }
-          showsVerticalScrollIndicator={false}
-        >
-          <MarkDoneBar
-            hasItem={markableItems.length > 0}
-            selecting={selecting}
-            pickedCount={picked.size}
-            allPicked={allPicked}
-            onExit={exitSelection}
-            onToggleAll={toggleAll}
-            onConfirm={() => setShowMarkDone(true)}
-          />
 
-          {hero && (
-            <View className="px-5 mb-6">
-              <NextUpCard
-                entry={hero}
-                selecting={selecting}
-                isPicked={picked.has(hero.item.id)}
-                onPress={() => handlePress(hero.item)}
-                onLongPress={() => handleLongPress(hero.item)}
-              />
-            </View>
-          )}
-
-          {pending.length > 0 && (
-            <View className="mb-8">
-              <SectionHeader
-                title="To Confirm"
-                subtitle="Check the uncertainties from these photos"
-              />
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}
-              >
-                {pending.map((item) => (
-                  <ReviewCard key={item.id} item={item} />
-                ))}
-              </ScrollView>
-            </View>
-          )}
-
-          {groups.length > 0 && (
-            <View className="space-y-4">
-              <SectionHeader title="Upcoming" />
-              {groups.map((g) => (
-                <DeadlineGroup
-                  key={g.title}
-                  title={g.title}
-                  items={g.items}
+            {hero && (
+              <View className="px-5 mt-6 mb-7">
+                <NextUpCard
+                  entry={hero}
                   selecting={selecting}
-                  picked={picked}
-                  onPress={handlePress}
-                  onLongPress={handleLongPress}
+                  isPicked={picked.has(hero.item.id)}
+                  onPress={() => handlePress(hero.item)}
+                  onLongPress={() => handleLongPress(hero.item)}
                 />
-              ))}
-            </View>
-          )}
-        </ScrollView>
-      )}
+              </View>
+            )}
+
+            {pending.length > 0 && (
+              <View className="mb-9">
+                <SectionHeader
+                  title="To Confirm"
+                  subtitle="Check the uncertainties from these photos"
+                />
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}
+                >
+                  {pending.map((item) => (
+                    <ReviewCard key={item.id} item={item} />
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+
+            {groups.length > 0 && (
+              <View className="space-y-5 mt-2">
+                {groups.map((g) => (
+                  <DeadlineGroup
+                    key={g.title}
+                    title={g.title}
+                    items={g.items}
+                    selecting={selecting}
+                    picked={picked}
+                    onPress={handlePress}
+                    onLongPress={handleLongPress}
+                  />
+                ))}
+              </View>
+            )}
+          </View>
+        )}
+      </ScrollView>
 
       <MarkAsDoneModal
         visible={showMarkDone}

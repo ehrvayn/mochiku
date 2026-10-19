@@ -8,7 +8,7 @@ import Animated, {
 import { Ionicons } from "@expo/vector-icons";
 
 const ROTATE_MS = 4500;
-const ARROW_SIZE = 44;
+const ARROW_SIZE = 34;
 
 export type StatusCarouselProps = {
   ids: string[];
@@ -141,6 +141,7 @@ function ArrowButton({
       onPressOut={() => {
         pressed.value = withTiming(0, { duration: 140 });
       }}
+      // Visual size shrank, so keep the effective touch target ~50px.
       hitSlop={8}
       style={styles.arrowHit}
       accessibilityRole="button"
@@ -149,7 +150,7 @@ function ArrowButton({
       <Animated.View style={[styles.arrow, animated]}>
         <Ionicons
           name={isNext ? "chevron-forward" : "chevron-back"}
-          size={18}
+          size={16}
           color="#FFFFFF"
         />
       </Animated.View>
@@ -162,7 +163,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 6,
+    marginTop: 2,
   },
   arrowHit: {
     width: ARROW_SIZE,
@@ -171,9 +172,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   arrow: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "rgba(255,255,255,0.22)",
