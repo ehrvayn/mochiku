@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Stack } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
+import { router, usePathname } from "expo-router";
 import {
   ScrollView,
   Text,
@@ -86,7 +87,6 @@ export default function Profile() {
     [firstName, user?.mascot_lang],
   );
 
-  // Stored as 24-hour "HH:MM"; shown here as 12-hour, e.g. "9:00 AM".
   const reminderLabel = (() => {
     if (!user?.reminder_time) return "—";
     const [h, m] = user.reminder_time.split(":").map(Number);
@@ -119,7 +119,7 @@ export default function Profile() {
         >
           <View className="flex-row items-center gap-4">
             <View className="items-center justify-center">
-              <Mochiku mood="happy" height={124} width={116} />
+              <Mochiku mood="idle" height={124} width={116} />
             </View>
 
             <View className="flex-1 justify-center">
@@ -168,12 +168,16 @@ export default function Profile() {
                     disabled={!draftName.trim() || isSavingName}
                     onPress={handleSaveName}
                     className={`flex-1 py-2.5 rounded-full items-center ${
-                      !draftName.trim() || isSavingName ? "bg-brand-soft" : "bg-brand"
+                      !draftName.trim() || isSavingName
+                        ? "bg-brand-soft"
+                        : "bg-brand"
                     }`}
                   >
                     <Text
                       className={`text-sm font-body-bold ${
-                        !draftName.trim() || isSavingName ? "text-ink-faint" : "text-cream"
+                        !draftName.trim() || isSavingName
+                          ? "text-ink-faint"
+                          : "text-cream"
                       }`}
                     >
                       {isSavingName ? "Saving…" : "Save"}
@@ -238,9 +242,15 @@ function Row({
   value: string;
 }) {
   const brandInk = useThemeColor("brand-ink", "#C2531A");
+  const pathname = usePathname();
 
   return (
-    <View className="flex-row items-center justify-between px-4 py-4">
+    <TouchableOpacity
+      onPress={() => {
+        if (pathname !== "/settings") router.navigate("/settings");
+      }}
+      className="flex-row items-center justify-between px-4 py-4"
+    >
       <View className="flex-row items-center gap-3">
         <Ionicons name={icon} size={18} color={brandInk} />
         <Text className="text-sm font-body-medium text-ink-soft dark:text-ink-soft-dark">
@@ -250,6 +260,6 @@ function Row({
       <Text className="text-sm font-body-bold text-ink dark:text-ink-dark">
         {value}
       </Text>
-    </View>
+    </TouchableOpacity>
   );
 }

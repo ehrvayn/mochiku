@@ -261,7 +261,7 @@ export default function Schedule() {
 
       <View
         className={`mb-2 pb-1 rounded-b-[36px] px-5 justify-center ${isDark ? "bg-brand-deep" : "bg-brand"}`}
-        style={{ paddingTop: insets.top + 6, minHeight: insets.top + 86 }}
+        style={{ paddingTop: insets.top + 6, minHeight: insets.top + 120 }}
       >
         <StatusCarousel
           ids={states.map((s) => s.id)}

@@ -201,7 +201,7 @@ export default function Review() {
                     isEditing ? handleSave() : setIsEditing(true)
                   }
                 >
-                  <Text className="text-lg font-body-bold self-center">save</Text>
+                  <Text className="text-lg dark:text-white font-body-bold self-center">{isSaving ? "saving..." : "save"}</Text>
                 </TouchableOpacity>
               ) : (
                 <ItemActionsMenu

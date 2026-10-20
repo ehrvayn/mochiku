@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Stack } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Platform, Switch, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { updateUser, getUser, parseNotifyCategories } from "../db/user";
@@ -27,59 +27,121 @@ function toHHMM(date: Date) {
   return `${h}:${m}`;
 }
 
+type SettingsSnapshot = {
+  time: Date;
+  categories: Set<string> | null;
+  lang: MascotLang;
+};
+
+function settingsKey(
+  time: Date,
+  categories: Set<string> | null,
+  lang: MascotLang,
+) {
+  return [
+    toHHMM(time),
+    categories === null ? "all" : [...categories].sort().join(","),
+    lang,
+  ].join("|");
+}
+
 export default function Settings() {
   const insets = useSafeAreaInsets();
   const [time, setTime] = useState(() => parseHHMM("09:00"));
-  const [saved, setSaved] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
   const [dark, setDark] = useState(isDarkPreferred);
   const [categories, setCategories] = useState<Set<string> | null>(null);
   const [lang, setLang] = useState<MascotLang>("en");
+  const [loaded, setLoaded] = useState(false);
+  const lastSaved = useRef<string | null>(null);
+  const pending = useRef<SettingsSnapshot | null>(null);
+  const saveQueue = useRef(Promise.resolve());
   const brandColor = useThemeColor("brand", "#FF8A4C");
   const brandInk = useThemeColor("brand-ink", "#C2531A");
   const lineColor = useThemeColor("line", "#F0E4CF");
-  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    return () => {
-      if (savedTimer.current) clearTimeout(savedTimer.current);
-    };
+  const persist = useCallback((snapshot: SettingsSnapshot) => {
+    const key = settingsKey(
+      snapshot.time,
+      snapshot.categories,
+      snapshot.lang,
+    );
+
+    saveQueue.current = saveQueue.current.then(async () => {
+      try {
+        await updateUser({
+          reminder_time: toHHMM(snapshot.time),
+          notify_categories:
+            snapshot.categories === null ? null : [...snapshot.categories],
+          mascot_lang: snapshot.lang,
+        });
+        await syncReminders();
+        lastSaved.current = key;
+      } catch (error) {
+        console.log("settings autosave failed:", error);
+      }
+    });
   }, []);
 
   useEffect(() => {
     let cancelled = false;
     getUser().then((user) => {
       if (cancelled || !user) return;
-      setTime(parseHHMM(user.reminder_time));
-      setCategories(parseNotifyCategories(user.notify_categories));
-      if (isMascotLang(user.mascot_lang)) setLang(user.mascot_lang);
+
+      const nextTime = parseHHMM(user.reminder_time);
+      const nextCategories = parseNotifyCategories(user.notify_categories);
+      const nextLang = isMascotLang(user.mascot_lang) ? user.mascot_lang : "en";
+
+      setTime(nextTime);
+      setCategories(nextCategories);
+      setLang(nextLang);
+      lastSaved.current = settingsKey(nextTime, nextCategories, nextLang);
+      setLoaded(true);
     });
     return () => {
       cancelled = true;
     };
   }, []);
 
+  useEffect(() => {
+    if (!loaded) return;
+
+    const key = settingsKey(time, categories, lang);
+    if (key === lastSaved.current) {
+      pending.current = null;
+      return;
+    }
+
+    pending.current = {
+      time: new Date(time),
+      categories,
+      lang,
+    };
+
+    const timer = setTimeout(() => {
+      const snapshot = pending.current;
+      pending.current = null;
+      if (snapshot) persist(snapshot);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [loaded, time, categories, lang, persist]);
+
+  useEffect(() => {
+    return () => {
+      const snapshot = pending.current;
+      pending.current = null;
+      if (snapshot) persist(snapshot);
+    };
+  }, [persist]);
+
   const handleValueChange = (_e: unknown, selected: Date) => {
     if (Platform.OS === "android") setShowPicker(false);
     setTime(selected);
-    setSaved(false);
   };
 
   const handleDismiss = () => {
     if (Platform.OS === "android") setShowPicker(false);
-  };
-
-  const handleSave = async () => {
-    await updateUser({
-      reminder_time: toHHMM(time),
-      notify_categories: categories === null ? null : [...categories],
-      mascot_lang: lang,
-    });
-    await syncReminders();
-
-    setSaved(true);
-    if (savedTimer.current) clearTimeout(savedTimer.current);
-    savedTimer.current = setTimeout(() => setSaved(false), 1000);
   };
 
   const handleDarkChange = (next: boolean) => {
@@ -103,15 +165,6 @@ export default function Settings() {
             How Mochiku should behave
           </Text>
         </View>
-        <TouchableOpacity
-          onPress={handleSave}
-          activeOpacity={0.85}
-          className="p-4 rounded-full bg-white dark:bg-brand-deep items-center"
-        >
-          <Text className="text-brand font-heading text-base">
-            {saved ? "Saved" : "Save"}
-          </Text>
-        </TouchableOpacity>
       </View>
 
       <View
@@ -185,7 +238,6 @@ export default function Settings() {
             selected={categories}
             onChange={(next) => {
               setCategories(next);
-              setSaved(false);
             }}
           />
         </View>
@@ -201,7 +253,6 @@ export default function Settings() {
                 activeOpacity={0.75}
                 onPress={() => {
                   setLang(l.code);
-                  setSaved(false);
                 }}
                 accessibilityRole="radio"
                 accessibilityState={{ selected: lang === l.code }}
