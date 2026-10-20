@@ -7,6 +7,7 @@ import EditableHeader from "../../components/item/Editableheader";
 import FieldRow, { formatKey } from "../../components/item/Fieldrow";
 import ReviewBanner from "../../components/item/Reviewbanner";
 import ImageSection from "../../components/item/ImageSection";
+import ItemActionsMenu from "../../components/item/ItemActionsMenu";
 import DeleteItemModal from "../../components/modal/DeleteItemModal";
 import { getCategory, useCategoryColors } from "../../constants/categories";
 import { getTone, softShadow } from "../../constants/tones";
@@ -34,7 +35,6 @@ export default function Review() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const cream = useThemeColor("cream", "#FFF8EC");
   const ink = useThemeColor("ink", "#2B2438");
-  const urgentInk = useThemeColor("urgent-ink", "#C73E37");
   const categoryColors = useCategoryColors();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -123,10 +123,12 @@ export default function Review() {
     !!item.deadline_at &&
     editedDeadline?.getTime() === new Date(item.deadline_at).getTime();
 
-  const lowLabels = [
-    ...(deadlineLow ? ["Deadline"] : []),
-    ...(fields ?? []).filter(isLow).map((f) => formatKey(f.key)),
-  ];
+  const lowLabels = Array.from(
+    new Set([
+      ...(deadlineLow ? ["Deadline"] : []),
+      ...(fields ?? []).filter(isLow).map((f) => formatKey(f.key)),
+    ]),
+  );
 
   const handleSave = async () => {
     if (!fields || isSaving) return;
@@ -191,30 +193,32 @@ export default function Review() {
           headerTintColor: ink,
           headerTitleStyle: { fontFamily: "Nunito_800ExtraBold" },
           headerRight: () => (
-            <View className="flex-row items-center gap-4">
-              {!needsReview && (
+            <>
+              {!needsReview && isEditing ? (
                 <TouchableOpacity
-                  disabled={isSaving}
+                  className="px-4"
                   onPress={() =>
                     isEditing ? handleSave() : setIsEditing(true)
                   }
-                  className="px-3 py-1.5 rounded-full bg-brand/10"
                 >
-                  <Text className="text-brand font-body-bold text-sm">
-                    {isSaving ? "Saving..." : isEditing ? "Save" : "Edit"}
-                  </Text>
+                  <Text className="text-lg font-body-bold self-center">save</Text>
                 </TouchableOpacity>
+              ) : (
+                <ItemActionsMenu
+                  title={item.title ?? "Untitled"}
+                  canEdit={!needsReview}
+                  busyAction={isSaving ? "save" : isDeleting ? "delete" : null}
+                  onEdit={() => setIsEditing(true)}
+                  onExport={() =>
+                    router.push({
+                      pathname: "/item/[id]/preview",
+                      params: { id },
+                    })
+                  }
+                  onDelete={() => setShowDelete(true)}
+                />
               )}
-              <TouchableOpacity
-                activeOpacity={0.7}
-                disabled={isSaving}
-                onPress={() => setShowDelete(true)}
-                hitSlop={10}
-                className="p-1.5"
-              >
-                <Ionicons name="trash-outline" size={20} color={urgentInk} />
-              </TouchableOpacity>
-            </View>
+            </>
           ),
         }}
       />

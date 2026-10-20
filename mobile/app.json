@@ -48,7 +48,8 @@
             "enableMinifyInReleaseBuilds": true
           }
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -38,9 +38,8 @@ import StatusCarousel from "../components/schedule/StatusCarousel";
 import WeekStrip from "../components/schedule/WeekStrip";
 import { useThemeColor } from "../theme";
 import { useColorScheme } from "nativewind";
-import { ReactNode } from "react";
 
-type StatusItem = { id: string; message: ReactNode; mood: Mood };
+type StatusItem = { id: string; message: string; mood: Mood };
 
 const cap = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
@@ -275,7 +274,11 @@ export default function Schedule() {
                 entering={FadeIn.duration(260)}
                 exiting={FadeOut.duration(140)}
               >
-                <MascotHeader message={state.message} mood={state.mood} />
+                <MascotHeader
+                  message={state.message}
+                  mood={state.mood}
+                  name={name}
+                />
               </Animated.View>
             );
           }}

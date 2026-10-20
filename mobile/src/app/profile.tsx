@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import MascotMessage from "../components/MascotMessage";
 import Mochiku from "../components/Mochiku";
 import { softShadow } from "../constants/tones";
 import { getUser, updateUser } from "../db/user";
@@ -77,14 +78,13 @@ export default function Profile() {
 
   const firstName = user?.name?.split(" ")[0] || "Friend";
 
-  // Split around the name so it can keep the display font, in both languages.
-  const [greetBefore, greetAfter] = useMemo(() => {
-    const full = mascotMessages(user?.mascot_lang ?? "en", firstName)
-      .profileGreeting(firstName);
-    const at = full.indexOf(firstName);
-    if (at === -1) return [full, ""];
-    return [full.slice(0, at), full.slice(at + firstName.length)];
-  }, [firstName, user?.mascot_lang]);
+  const profileGreeting = useMemo(
+    () =>
+      mascotMessages(user?.mascot_lang ?? "en", firstName).profileGreeting(
+        firstName,
+      ),
+    [firstName, user?.mascot_lang],
+  );
 
   // Stored as 24-hour "HH:MM"; shown here as 12-hour, e.g. "9:00 AM".
   const reminderLabel = (() => {
@@ -127,11 +127,11 @@ export default function Profile() {
                 className="relative rounded-3xl p-4 bg-paper dark:bg-paper-dark border border-line dark:border-line-dark"
                 style={softShadow}
               >
-                <Text className="text-sm font-heading text-ink dark:text-ink-dark leading-snug">
-                  {greetBefore}
-                  <Text className="font-display">{firstName}</Text>
-                  {greetAfter}
-                </Text>
+                <MascotMessage
+                  message={profileGreeting}
+                  name={firstName}
+                  className="text-sm font-heading text-ink dark:text-ink-dark leading-snug"
+                />
                 <View className="absolute -left-2 top-6 w-3 h-3 rotate-45 bg-paper dark:bg-paper-dark border-l border-b border-line dark:border-line-dark" />
               </View>
             </View>

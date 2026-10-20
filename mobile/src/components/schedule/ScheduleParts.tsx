@@ -6,8 +6,8 @@ import { getTone, softShadow } from "../../constants/tones";
 import { DeadlineEntry, MONTHS } from "../../hooks/useScheduleData";
 import { useThemeColor } from "../../theme";
 import { Item } from "../../types/item";
+import MascotMessage from "../MascotMessage";
 import Mochiku, { Mood } from "../Mochiku";
-import { ReactNode } from "react";
 
 export type PickableProps = {
   selecting?: boolean;
@@ -43,9 +43,11 @@ function CategoryTag({ value }: { value: string | null }) {
 export function MascotHeader({
   message,
   mood,
+  name,
 }: {
-  message: ReactNode;
+  message: string;
   mood: Mood;
+  name?: string | null;
 }) {
   return (
     <View className="flex-row gap-2 items-center">
@@ -57,9 +59,11 @@ export function MascotHeader({
           className="relative rounded-3xl p-3.5 bg-paper dark:bg-paper-dark border border-line dark:border-line-dark shadow-sm"
           style={softShadow}
         >
-          <Text className="text-sm font-heading text-ink dark:text-ink-dark leading-snug">
-            {message}
-          </Text>
+          <MascotMessage
+            message={message}
+            name={name}
+            className="text-sm font-heading text-ink dark:text-ink-dark leading-snug"
+          />
           <View className="absolute -left-2 top-6 w-3 h-3 rotate-45 bg-paper dark:bg-paper-dark border-l border-b border-line dark:border-line-dark" />
         </View>
       </View>

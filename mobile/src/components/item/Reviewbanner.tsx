@@ -76,9 +76,9 @@ export default function ReviewBanner({
         I wasn't completely sure about {labels.length === 1 ? "it" : "them"}.
       </Text>
       <View className="flex-row flex-wrap gap-1.5">
-        {labels.map((label) => (
+        {labels.map((label, index) => (
           <View
-            key={label}
+            key={`${label}-${index}`}
             className="bg-paper rounded-full px-2.5 py-1 border border-dashed border-soon"
           >
             <Text className="text-[11px] font-body-bold text-soon-ink">

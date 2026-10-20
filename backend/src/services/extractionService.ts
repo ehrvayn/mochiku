@@ -18,7 +18,7 @@ Today is ${today}. Return ONLY valid JSON in this exact shape:
 Rules:
 - title: short and specific (max 60 chars). Name the thing, e.g. "Meralco bill - January", not "Bill".
 - deadline: the date the user must act by (due date, submission date, closing date, promo expiry). Not the issue date. If several, pick the nearest upcoming one. If the year is missing, use the next occurrence on or after today. Resolve relative dates like "until Friday" against today. If there is no deadline, use null (confidence = how sure you are there is none).
-- fields: up to 20 maximum useful details (e.g. amount_due, biller, account_number, company, position, promo_code). Don't repeat title or deadline. Copy text as written, never invent values. If the image has a description, add it to the fields no matter how long it is. 
+- fields: up to 20 maximum useful details (e.g. amount_due, biller, account_number, company, position, promo_code). Don't repeat title or deadline. Copy text as written, never invent values. If the image has a description, add it to the fields no matter how long it is. If there's fields that are doubled or the same, only delete the other one if the value is also the same. 
 - confidence is 0 to 1 for EVERY value: 0.95+ clear and printed, 0.8 to 0.94 readable, 0.6 to 0.79 blurry or ambiguous, below 0.6 mostly a guess. Lower it for blur, glare, cropping, handwriting and anything inferred. Make sure to not guess the confidence and absolutely follow the confidence instructions SPECIALLY on deadlines, 
 - If the image is unreadable: category "other", title "Unreadable photo, this image doesnt have any data to extract", deadline null, fields {}.`;
 
