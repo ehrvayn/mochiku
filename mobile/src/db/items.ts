@@ -1,5 +1,6 @@
 import { randomUUID } from "expo-crypto";
 import { getDb } from "./index";
+import { syncItemExpenseData } from "./expenses";
 import { Item, ItemStatus, ExtractedData, ItemField } from "../types/item";
 
 export async function insertItem(uri: string): Promise<string> {
@@ -101,6 +102,8 @@ export async function saveExtractedData(
       [itemId, key, field.value, field.confidence],
     );
   }
+
+  await syncItemExpenseData(itemId);
 }
 
 export async function markItemsDone(
@@ -145,17 +148,21 @@ export async function updateItem(
     `UPDATE items SET title = ?, deadline_at = ?, updated_at = ? WHERE id = ?`,
     [itemData.title, itemData.deadline, new Date().toISOString(), itemId],
   );
+  // A bill's due date is part of how its expense month is chosen.
+  await syncItemExpenseData(itemId);
 }
 
 export async function updateItemField(
   fieldId: number,
   value: string,
+  itemId?: string,
 ): Promise<void> {
   const db = await getDb();
   await db.runAsync(
     `UPDATE item_fields SET value = ?, user_edited = 1 WHERE id = ?`,
     [value, fieldId],
   );
+  if (itemId) await syncItemExpenseData(itemId);
 }
 
 export async function deleteItem(itemId: string): Promise<void> {

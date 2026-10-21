@@ -8,16 +8,20 @@ import { Item } from "../types/item";
 
 export default function LibraryItemRow({
   item,
-  isPicked,
-  selecting,
+  isPicked = false,
+  selecting = false,
+  amountLabel,
+  metaLabel,
   onPress,
   onLongPress,
 }: {
   item: Item;
-  isPicked: boolean;
-  selecting: boolean;
+  isPicked?: boolean;
+  selecting?: boolean;
+  amountLabel?: string;
+  metaLabel?: string;
   onPress: () => void;
-  onLongPress: () => void;
+  onLongPress?: () => void;
 }) {
   const categoryColors = useCategoryColors();
   const category = getCategory(item.category);
@@ -65,6 +69,11 @@ export default function LibraryItemRow({
           {item.title ?? "Untitled"}
         </Text>
         <View className="flex-row items-center gap-2 flex-wrap">
+          {metaLabel && (
+            <Text className="text-xs font-body-medium text-ink-faint">
+              {metaLabel}
+            </Text>
+          )}
           <Text className="text-xs font-body-medium" style={{ color: cat.fg }}>
             {category.label}
           </Text>
@@ -79,7 +88,17 @@ export default function LibraryItemRow({
       </View>
 
       {!selecting && (
-        <Ionicons name="chevron-forward" size={18} color={chevron} />
+        <View className="items-end gap-1.5">
+          {amountLabel && (
+            <Text
+              className="text-sm font-heading text-ink"
+              numberOfLines={1}
+            >
+              {amountLabel}
+            </Text>
+          )}
+          <Ionicons name="chevron-forward" size={18} color={chevron} />
+        </View>
       )}
     </TouchableOpacity>
   );

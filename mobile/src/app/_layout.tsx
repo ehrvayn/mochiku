@@ -33,7 +33,11 @@ import {
   readStoredAppearance,
   useThemeColor,
 } from "../theme";
-import { refreshSchedule, refreshLibrary } from "../store/appCache";
+import {
+  refreshSchedule,
+  refreshLibrary,
+  refreshExpenses,
+} from "../store/appCache";
 
 configureReanimatedLogger({
   level: ReanimatedLogLevel.warn,
@@ -109,6 +113,7 @@ export default function RootLayout() {
 
     void refreshSchedule();
     void refreshLibrary();
+    void refreshExpenses();
 
     ensureLocalUser()
       .then((user) => {

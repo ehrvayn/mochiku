@@ -66,12 +66,26 @@ async function migrate(db: SQLite.SQLiteDatabase) {
     ["category_confidence", "REAL"],
     ["deadline_confidence", "REAL"],
     ["mark_as_done", "INTEGER NOT NULL DEFAULT 0"],
+    // Derived from item_fields so the Expenses tab can sum and group without
+    // joining every field row. Keep them in sync via syncItemExpenseData().
+    ["amount_minor", "INTEGER"],
+    // The date printed on the document (local YYYY-MM-DD). Expense months are
+    // grouped by this, not by when the photo was saved.
+    ["expense_date", "TEXT"],
+    // 'extracted' or 'created', so the UI can flag saved-date fallbacks.
+    ["expense_date_source", "TEXT"],
   ];
   for (const [col, type] of additions) {
     if (!cols.some((c) => c.name === col)) {
       await db.execAsync(`ALTER TABLE items ADD COLUMN ${col} ${type}`);
     }
   }
+
+  // Created after the ALTER above, because old databases only grow the column
+  // in this pass.
+  await db.execAsync(
+    "CREATE INDEX IF NOT EXISTS idx_items_expense_date ON items(expense_date)",
+  );
 
   const userCols = await db.getAllAsync<{ name: string }>(
     "PRAGMA table_info(user)",

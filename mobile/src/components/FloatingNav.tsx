@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { router, usePathname } from "expo-router";
 import { TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -6,19 +6,37 @@ import { softShadow } from "../constants/tones";
 import { useThemeColor } from "../theme";
 import { useColorScheme } from "nativewind";
 
-const VISIBLE_ON = ["/schedule", "/library", "/profile", "/settings"];
+const VISIBLE_ON = ["/schedule", "/library", "/expenses", "/settings"];
+
+type NavGlyph =
+  | { family: "ionicons"; name: keyof typeof Ionicons.glyphMap }
+  | { family: "material"; name: keyof typeof MaterialCommunityIcons.glyphMap };
+
+const ion = (name: keyof typeof Ionicons.glyphMap): NavGlyph => ({
+  family: "ionicons",
+  name,
+});
+
+// Ionicons has no peso glyph; MaterialCommunityIcons carries `currency-php`,
+// which matches the Expenses tab better than a generic wallet.
+const PESO: NavGlyph = { family: "material", name: "currency-php" };
+
+function NavIcon({ glyph, color }: { glyph: NavGlyph; color: string }) {
+  if (glyph.family === "material") {
+    return <MaterialCommunityIcons name={glyph.name} size={22} color={color} />;
+  }
+  return <Ionicons name={glyph.name} size={22} color={color} />;
+}
 
 function NavItem({
   active,
-  activeIcon,
-  idleIcon,
+  icon,
   onPress,
   activeColor,
   idleColor,
 }: {
   active: boolean;
-  activeIcon: keyof typeof Ionicons.glyphMap;
-  idleIcon: keyof typeof Ionicons.glyphMap;
+  icon: NavGlyph;
   onPress: () => void;
   activeColor: string;
   idleColor: string;
@@ -31,11 +49,7 @@ function NavItem({
         active ? "bg-cream/20" : ""
       }`}
     >
-      <Ionicons
-        name={active ? activeIcon : idleIcon}
-        size={22}
-        color={active ? activeColor : idleColor}
-      />
+      <NavIcon glyph={icon} color={active ? activeColor : idleColor} />
     </TouchableOpacity>
   );
 }
@@ -71,8 +85,7 @@ export default function FloatingNav() {
         <View className="flex-row items-end gap-3">
           <NavItem
             active={pathname === "/library"}
-            activeIcon="albums"
-            idleIcon="albums"
+            icon={ion("albums")}
             activeColor={navActive}
             idleColor={navIdle}
             onPress={() =>
@@ -81,8 +94,7 @@ export default function FloatingNav() {
           />
           <NavItem
             active={pathname === "/schedule"}
-            activeIcon="calendar"
-            idleIcon="calendar"
+            icon={ion("calendar")}
             activeColor={navActive}
             idleColor={navIdle}
             onPress={() =>
@@ -102,19 +114,17 @@ export default function FloatingNav() {
 
         <View className="flex-row items-end gap-3">
           <NavItem
-            active={pathname === "/profile"}
-            activeIcon="person"
-            idleIcon="person"
+            active={pathname === "/expenses"}
+            icon={PESO}
             activeColor={navActive}
             idleColor={navIdle}
             onPress={() =>
-              pathname !== "/profile" && router.navigate("/profile")
+              pathname !== "/expenses" && router.navigate("/expenses")
             }
           />
           <NavItem
             active={pathname === "/settings"}
-            activeIcon="settings"
-            idleIcon="settings"
+            icon={ion("settings")}
             activeColor={navActive}
             idleColor={navIdle}
             onPress={() =>

@@ -47,10 +47,11 @@ export default function ScanExamples() {
 
   return (
     <View className="w-full bg-paper dark:bg-paper-dark border border-line dark:border-line-dark rounded-3xl px-4 py-5">
-      <Text className="text-[25px] mb-4 leading-[38px] font-display text-ink dark:text-ink-dark">
+      <Text className="text-lg  mb-4 leading-[38px] font-display text-ink dark:text-ink-dark">
         <Text className="text-brand">Items</Text> with deadlines will show up
         here.
       </Text>
+      <View className="bg-gray-200 h-px w-full mb-5"/>
       <Text className="text-[11px] font-body-bold uppercase tracking-wider text-ink-faint dark:text-ink-faint-dark mb-4">
         Examples of what Mochiku can read
       </Text>

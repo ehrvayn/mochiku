@@ -9,6 +9,8 @@ export type ItemStatus =
 
 export type SyncStatus = "pending" | "synced";
 
+export type ExpenseDateSource = "extracted" | "created";
+
 export interface Item {
   id: string;
   local_image_uri: string;
@@ -24,6 +26,11 @@ export interface Item {
   title_confidence: number | null;
   category_confidence: number | null;
   deadline_confidence: number | null;
+  amount_minor: number | null;
+  /** Date printed on the document, as local YYYY-MM-DD. */
+  expense_date: string | null;
+  /** Whether `expense_date` came from the document or the saved date. */
+  expense_date_source: ExpenseDateSource | null;
 }
 
 export interface ItemField {

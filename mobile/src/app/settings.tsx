@@ -2,9 +2,21 @@ import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Stack } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Platform, Switch, Text, TouchableOpacity, View } from "react-native";
+import {
+  Platform,
+  ScrollView,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { updateUser, getUser, parseNotifyCategories } from "../db/user";
+import {
+  updateUser,
+  getUser,
+  parseNotifyCategories,
+} from "../db/user";
 import CategoryFilterChips from "../components/settings/CategoryFilterChips";
 import { isMascotLang, MASCOT_LANGS, type MascotLang } from "../constants/i18n";
 import { syncReminders } from "../services/notifications";
@@ -52,6 +64,10 @@ export default function Settings() {
   const [dark, setDark] = useState(isDarkPreferred);
   const [categories, setCategories] = useState<Set<string> | null>(null);
   const [lang, setLang] = useState<MascotLang>("en");
+  const [name, setName] = useState("");
+  const [editingName, setEditingName] = useState(false);
+  const [draftName, setDraftName] = useState("");
+  const [savingName, setSavingName] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const lastSaved = useRef<string | null>(null);
   const pending = useRef<SettingsSnapshot | null>(null);
@@ -59,6 +75,7 @@ export default function Settings() {
   const brandColor = useThemeColor("brand", "#FF8A4C");
   const brandInk = useThemeColor("brand-ink", "#C2531A");
   const lineColor = useThemeColor("line", "#F0E4CF");
+  const inkFaint = useThemeColor("ink-faint", "#A39DB0");
 
   const persist = useCallback((snapshot: SettingsSnapshot) => {
     const key = settingsKey(
@@ -95,6 +112,7 @@ export default function Settings() {
       setTime(nextTime);
       setCategories(nextCategories);
       setLang(nextLang);
+      setName(user.name);
       lastSaved.current = settingsKey(nextTime, nextCategories, nextLang);
       setLoaded(true);
     });
@@ -151,6 +169,33 @@ export default function Settings() {
     endThemeToggleProbe();
   };
 
+  const beginNameEdit = () => {
+    setDraftName(name);
+    setEditingName(true);
+  };
+
+  const cancelNameEdit = () => {
+    setEditingName(false);
+    setDraftName("");
+  };
+
+  const saveName = async () => {
+    const next = draftName.trim();
+    if (!next || savingName) return;
+
+    setSavingName(true);
+    try {
+      await updateUser({ name: next });
+      setName(next);
+      setEditingName(false);
+      setDraftName("");
+    } catch (error) {
+      console.log("rename failed:", error);
+    } finally {
+      setSavingName(false);
+    }
+  };
+
   return (
     <View className="flex-1 bg-cream dark:bg-night">
       <Stack.Screen options={{ headerShown: false }} />
@@ -167,10 +212,86 @@ export default function Settings() {
         </View>
       </View>
 
-      <View
-        className="flex-1 px-5"
-        style={{ paddingBottom: insets.bottom + 128 }}
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{
+          paddingHorizontal: 20,
+          paddingBottom: insets.bottom + 128,
+        }}
+        showsVerticalScrollIndicator={false}
       >
+        <View className="mb-6">
+          <Text className="text-xs font-body-bold text-brand-ink dark:text-brand mb-2">
+            Your name
+          </Text>
+
+          <View className="bg-paper dark:bg-paper-dark rounded-2xl border border-line dark:border-line-dark overflow-hidden">
+            {editingName ? (
+              <View className="px-4 py-4 gap-3">
+                <TextInput
+                  value={draftName}
+                  onChangeText={setDraftName}
+                  autoFocus
+                  returnKeyType="done"
+                  onSubmitEditing={saveName}
+                  placeholder="Your name"
+                  placeholderTextColor={inkFaint}
+                  maxLength={40}
+                  accessibilityLabel="Your name"
+                  className="text-base font-body-medium text-ink dark:text-ink-dark bg-cream dark:bg-night border border-line dark:border-line-dark rounded-xl px-3 py-2.5"
+                />
+                <View className="flex-row gap-2">
+                  <TouchableOpacity
+                    activeOpacity={0.75}
+                    onPress={cancelNameEdit}
+                    className="flex-1 py-2.5 rounded-full bg-cream dark:bg-night border border-line dark:border-line-dark items-center"
+                  >
+                    <Text className="text-sm font-body-bold text-ink-soft dark:text-ink-soft-dark">
+                      Cancel
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    disabled={!draftName.trim() || savingName}
+                    onPress={saveName}
+                    className={`flex-1 py-2.5 rounded-full items-center ${
+                      !draftName.trim() || savingName
+                        ? "bg-brand-soft"
+                        : "bg-brand"
+                    }`}
+                  >
+                    <Text
+                      className={`text-sm font-body-bold ${
+                        !draftName.trim() || savingName
+                          ? "text-ink-faint"
+                          : "text-white"
+                      }`}
+                    >
+                      {savingName ? "Saving…" : "Save"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : (
+              <TouchableOpacity
+                activeOpacity={0.75}
+                onPress={beginNameEdit}
+                accessibilityRole="button"
+                accessibilityLabel={`Name, ${name || "not set"}. Tap to change.`}
+                className="px-4 py-3.5 flex-row items-center justify-between"
+              >
+                <View className="flex-row items-center gap-3">
+                  <Ionicons name="person-outline" size={18} color={brandInk} />
+                  <Text className="text-base font-body-medium text-ink dark:text-ink-dark">
+                    {name || "—"}
+                  </Text>
+                </View>
+                <Ionicons name="pencil-outline" size={14} color={inkFaint} />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
         <View className="mb-6">
           <Text className="text-xs font-body-bold text-brand-ink dark:text-brand mb-2">
             Dark mode
@@ -276,7 +397,19 @@ export default function Settings() {
           This changes what Mochiku says when he greets you. The rest of the app
           stays in English.
         </Text>
-      </View>
+
+        <View className="flex-row items-start gap-2 px-1">
+          <Ionicons
+            name="information-circle-outline"
+            size={16}
+            color={inkFaint}
+            style={{ marginTop: 1 }}
+          />
+          <Text className="text-xs font-body text-ink-faint dark:text-ink-faint-dark flex-1">
+            Everything Mochiku remembers stays on this device.
+          </Text>
+        </View>
+      </ScrollView>
     </View>
   );
 }

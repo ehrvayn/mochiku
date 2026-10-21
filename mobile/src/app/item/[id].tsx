@@ -142,7 +142,7 @@ export default function Review() {
       for (const field of fields) {
         const newValue = editedValues[field.id];
         if (newValue !== undefined && newValue !== (field.value ?? "")) {
-          await updateItemField(field.id, newValue);
+          await updateItemField(field.id, newValue, id);
         }
       }
 

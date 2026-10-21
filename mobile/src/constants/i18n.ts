@@ -18,7 +18,6 @@ export type MascotMessages = {
   week: (count: number) => string;
   heroIdle: (days: number) => string;
   empty: () => string;
-  profileGreeting: (name: string) => string;
 };
 
 const cap = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
@@ -43,8 +42,6 @@ const EN: Omit<MascotMessages, "greet"> = {
       days === 1 ? "day" : "days"
     } from now.`,
   empty: () => "no deadlines coming up. Snap a photo and I'll catch the dates!",
-  profileGreeting: (name) =>
-    `Hi, ${name}. I'm Mochiku and I keep your shelf tidy.`,
 };
 
 const TL: Omit<MascotMessages, "greet"> = {
@@ -68,8 +65,6 @@ const TL: Omit<MascotMessages, "greet"> = {
     } mula ngayon.`,
   empty: () =>
     "walang paparating na deadline. Mag take ka ng picture, ako na ang bahala kung may deadline!",
-  profileGreeting: (name) =>
-    `Kumusta, ${name}. Ako si Mochiku, ako bahala sa mga importanting bagay sa photos mo.`,
 };
 
 const BODY: Record<MascotLang, Omit<MascotMessages, "greet">> = {
