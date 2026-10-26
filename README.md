@@ -39,13 +39,10 @@ People photograph important things as a "reminder" and never look at them again.
 ## Architecture
 
 Camera capture
-│
 ▼
 Save photo + create item (local SQLite) ── always runs first, regardless of connectivity
-│
 ▼
 Upload to backend ── retried automatically if offline or failed
-│
 ▼
 AI extraction (category, title, deadline, fields, confidence)
 │
