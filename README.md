@@ -36,40 +36,6 @@ People photograph important things as a "reminder" and never look at them again.
 - Vision-language model API for extraction (Groq / Gemini)
 - Retry logic with exponential backoff for handling rate limits and transient failures
 
-## Architecture
-
-Camera capture
-▼
-Save photo + create item (local SQLite) ── always runs first, regardless of connectivity
-▼
-Upload to backend ── retried automatically if offline or failed
-▼
-AI extraction (category, title, deadline, fields, confidence)
-│
-├── Deadline found ──► status: pending_review ──► user confirms ──► reminder scheduled
-│
-└── No deadline ──► status: stored ──► searchable in Library
-
-
-Every item moves through a defined state machine (`uploaded → pending_review / stored → confirmed`), and a reminder is only ever scheduled after an explicit user confirmation, never automatically from an unverified AI reading.
-
-## Project Structure
-
-mobile/
-├── src/
-│ ├── app/ # Expo Router screens
-│ ├── components/ # Reusable UI components
-│ ├── db/ # SQLite access layer (items, fields, user)
-│ ├── services/ # Upload, notifications, sharing
-│ ├── hooks/ # Custom hooks
-│ └── types/ # Shared TypeScript types
-backend/
-└── src/
-├── routes/
-├── controllers/
-├── services/ # AI extraction logic
-└── middleware/
-
 
 ## Running Locally
 
