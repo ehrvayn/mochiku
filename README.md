@@ -2,7 +2,7 @@
 
 **Snap it. Mochiku remembers it.**
 
-<img src="https://res.cloudinary.com/dlvcjwfjm/image/upload/v1792998511/MochikuSample.png" alt="InterviewSpark logo" height="200" align="absmiddle">
+<img src="https://res.cloudinary.com/dlvcjwfjm/image/upload/v1792998511/MochikuSample.png" alt="InterviewSpark logo" height="500" align="absmiddle">
 
 Mochiku is an offline-first mobile app that turns a photo of a bill, receipt, or notice into structured, reviewable data. A vision-AI backend extracts the title, category, and deadline from each photo, with per-field confidence scores so you know what to double-check. Items with deadlines go through a quick confirm step before a local reminder is scheduled; everything else is stored automatically in a searchable photo-grid library.
 
