@@ -6,7 +6,7 @@ Mochiku is an offline-first mobile app that turns a photo of a bill, receipt, or
 
 ## Why
 
-People photograph important things as a "reminder" and never look at them again. Mochiku turns that photo into something that actually acts on your behalf: it reads the deadline, tells you when it's confident, and nudges you before it's due, without ever requiring you to type anything.
+People photograph important things as a "reminder" and never look at them again. Mochiku turns that photo into something that actually acts on your behalf: it reads the deadline, tells you when it's confident, and nudges you before it's due, track monthly expenses, without ever requiring you to type anything.
 
 ## Features
 
@@ -15,6 +15,7 @@ People photograph important things as a "reminder" and never look at them again.
 - **Offline-first** — photos and data save instantly to on-device SQLite regardless of connectivity; failed uploads retry automatically once back online
 - **Review-before-remind** — any item with a deadline must be confirmed before a reminder is scheduled, protecting against a wrong AI reading silently causing a missed payment
 - **Local push notifications** — reminders fire without needing an internet connection
+- **Simple expense tracker** — when an item has expenses, its automatically added to the simple monthly expense tracker
 - **Expense summary** — a lightweight monthly total for bills and receipts, pulled from the same structured data
 - **Dark mode** — full light/dark theming throughout
 - **Custom onboarding** — first-run flow that sets up the user's name and preferred reminder time
@@ -36,3 +37,61 @@ People photograph important things as a "reminder" and never look at them again.
 - Retry logic with exponential backoff for handling rate limits and transient failures
 
 ## Architecture
+
+Camera capture
+│
+▼
+Save photo + create item (local SQLite) ── always runs first, regardless of connectivity
+│
+▼
+Upload to backend ── retried automatically if offline or failed
+│
+▼
+AI extraction (category, title, deadline, fields, confidence)
+│
+├── Deadline found ──► status: pending_review ──► user confirms ──► reminder scheduled
+│
+└── No deadline ──► status: stored ──► searchable in Library
+
+
+Every item moves through a defined state machine (`uploaded → pending_review / stored → confirmed`), and a reminder is only ever scheduled after an explicit user confirmation, never automatically from an unverified AI reading.
+
+## Project Structure
+
+mobile/
+├── src/
+│ ├── app/ # Expo Router screens
+│ ├── components/ # Reusable UI components
+│ ├── db/ # SQLite access layer (items, fields, user)
+│ ├── services/ # Upload, notifications, sharing
+│ ├── hooks/ # Custom hooks
+│ └── types/ # Shared TypeScript types
+backend/
+└── src/
+├── routes/
+├── controllers/
+├── services/ # AI extraction logic
+└── middleware/
+
+
+## Running Locally
+
+**Backend**
+```bash
+cd backend
+npm install
+npm run dev
+```
+
+**Mobile**
+```bash
+cd mobile
+npm install
+npx expo start
+```
+
+Requires a `.env` file in `backend/` with a valid API key for the vision model provider in use.
+
+## Status
+
+Completed as a solo full-stack project — mobile, backend, AI integration, and UI/UX design.
