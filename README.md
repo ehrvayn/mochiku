@@ -1,4 +1,4 @@
-# Mochiku - **Snap it. Mochiku remembers it.**
+# Mochiku - Snap it. Mochiku remembers it.
 
 <img src="https://res.cloudinary.com/dlvcjwfjm/image/upload/v1792998511/MochikuSample.png" alt="InterviewSpark logo" height="500" align="absmiddle">
 
