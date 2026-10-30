@@ -1,4 +1,7 @@
-# Mochiku - Snap & Remember.
+<h1>
+  <img src="https://res.cloudinary.com/dlvcjwfjm/image/upload/v1793352744/splash-screen.png" alt="InterviewSpark logo" height="48" align="absmiddle">
+  Mochiku - Snap & Remember
+</h1>
 
 <img src="https://res.cloudinary.com/dlvcjwfjm/image/upload/v1792998511/MochikuSample.png" alt="InterviewSpark logo" height="500" align="absmiddle">
 
