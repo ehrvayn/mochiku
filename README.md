@@ -1,5 +1,5 @@
 <h1>
-  <img src="https://res.cloudinary.com/dlvcjwfjm/image/upload/v1793352744/splash-screen.png" alt="InterviewSpark logo" height="48" align="absmiddle">
+  <img src="https://res.cloudinary.com/dlvcjwfjm/image/upload/v1793352744/splash-screen.png" alt="InterviewSpark logo" height="40" align="absmiddle">
   Mochiku - Snap & Remember
 </h1>
 
